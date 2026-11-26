@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Дисклеймер Lux · Ветер перемен</title>
+<style>
+  @font-face { font-family: Brand; font-weight: 400; src: local('Century Gothic'), local('CenturyGothic'), url(fonts/CenturyGothic.ttf), url(fonts/GOTHIC.TTF), url(fonts/URWGothic-Book.otf); }
+  @font-face { font-family: Brand; font-weight: 700; src: local('Century Gothic Bold'), local('CenturyGothic-Bold'), url(fonts/CenturyGothic-Bold.ttf), url(fonts/GOTHICB.TTF), url(fonts/URWGothic-Demi.otf); }
+  :root { --pearl: #f4f6fc; --ice: #9fb4ff; --mist: #c4cde8; --dim: #8592b8; }
+  html, body { margin: 0; background: #040919; }
+  #stage { position: relative; width: 1920px; height: 1080px; overflow: hidden; font-family: Brand, sans-serif; color: var(--pearl); background: #040919; }
+  #gl { position: absolute; inset: 0; width: 1920px; height: 1080px; }
+  .layer { position: absolute; left: 156px; will-change: transform, filter, opacity; }
+
+  #kicker { top: 176px; display: flex; align-items: center; gap: 22px; font-size: 22px; font-weight: 400; letter-spacing: .34em; color: var(--ice); text-transform: uppercase; }
+  #kicker i { display: block; width: 64px; height: 1px; background: linear-gradient(90deg, rgba(159,180,255,0), var(--ice)); transform-origin: left; }
+  #icons { top: 252px; display: flex; gap: 24px; }
+  #icons svg { width: 104px; height: 104px; overflow: visible; filter: drop-shadow(0 0 14px rgba(110,140,255,.35)); }
+  #head { top: 400px; font-size: 116px; font-weight: 700; line-height: 1.02; letter-spacing: -0.015em; white-space: nowrap; }
+  #head .ln { display: block; position: relative; }
+  #head .ch { display: inline-block; will-change: transform, filter, opacity; text-shadow: 0 0 40px rgba(120,150,255,.25); }
+  #shine { position: absolute; left: 0; top: 0; color: transparent; pointer-events: none;
+           background: linear-gradient(100deg, rgba(255,255,255,0) 42%, rgba(200,215,255,.95) 49%, #ffffff 50%, rgba(200,215,255,.95) 51%, rgba(255,255,255,0) 58%);
+           background-size: 300% 100%; -webkit-background-clip: text; background-clip: text; mix-blend-mode: screen; }
+  #rule { top: 676px; height: 1px; width: 520px; background: linear-gradient(90deg, var(--ice), rgba(159,180,255,0)); transform-origin: left; }
+  #body { top: 716px; font-size: 38px; line-height: 1.34; color: var(--mist); }
+  #en { top: 838px; font-size: 22px; letter-spacing: .14em; text-transform: uppercase; color: var(--dim); }
+  #sign { top: 950px; display: flex; align-items: center; gap: 30px; }
+  #sign .w { font-size: 30px; font-weight: 700; letter-spacing: .02em; }
+  #sign .bar { width: 1px; height: 46px; background: var(--pearl); opacity: .3; }
+  #logo { height: 56px; width: auto; display: block; filter: brightness(0) invert(1); }
+  #sign .ldb { font-size: 15px; letter-spacing: .3em; line-height: 1.45; color: var(--mist); }
+  #sign .ldb b { font-weight: 700; letter-spacing: .22em; font-size: 21px; display: block; color: var(--pearl); }
+  #veil { position: absolute; inset: 0; background: #040919; pointer-events: none; }
+</style>
+<script type="importmap">
+{ "imports": { "three": "./node_modules/three/build/three.module.js", "three/addons/": "./node_modules/three/examples/jsm/" } }
+</script>
+</head>
+<body>
+<div id="stage">
+  <canvas id="gl" width="1920" height="1080"></canvas>
+
+  <div class="layer" id="kicker"><i></i>National Meeting LDB · 16–17.12</div>
+  <div class="layer" id="icons">
+    <svg viewBox="0 0 112 112" fill="none">
+      <circle cx="56" cy="56" r="52" stroke="#f4f6fc" stroke-width="2.5" class="ring" pathLength="1" stroke-dasharray="1" />
+      <g stroke="#f4f6fc" stroke-width="3" stroke-linejoin="round" class="glyph"><path d="M30 44h12l5-7h18l5 7h12v32H30z" /><circle cx="56" cy="60" r="10" /></g>
+      <line x1="22" y1="90" x2="90" y2="22" stroke="#9fb4ff" stroke-width="5" stroke-linecap="round" class="slash" pathLength="1" stroke-dasharray="1" />
+    </svg>
+    <svg viewBox="0 0 112 112" fill="none">
+      <circle cx="56" cy="56" r="52" stroke="#f4f6fc" stroke-width="2.5" class="ring" pathLength="1" stroke-dasharray="1" />
+      <g stroke="#f4f6fc" stroke-width="3" stroke-linejoin="round" class="glyph"><rect x="27" y="40" width="42" height="32" rx="5" /><path d="M69 52l16-9v26l-16-9z" /></g>
+      <line x1="22" y1="90" x2="90" y2="22" stroke="#9fb4ff" stroke-width="5" stroke-linecap="round" class="slash" pathLength="1" stroke-dasharray="1" />
+    </svg>
+  </div>
+  <div class="layer" id="head"><span class="ln">Фото- и видеосъёмка</span><span class="ln">запрещена</span><div id="shine">Фото- и видеосъёмка<br>запрещена</div></div>
+  <div class="layer" id="rule"></div>
+  <div class="layer" id="body">Всё, что прозвучит в этом зале,<br>остаётся в этом зале.</div>
+  <div class="layer" id="en">Photo and video recording is not permitted</div>
+  <div class="layer" id="sign">
+    <div class="w">Ветер перемен</div>
+    <div class="bar"></div>
+    <img id="logo" src="logo/ldb-logo.png" alt="L'Oréal Dermatological Beauty" onerror="this.remove();document.getElementById('ldbtxt').style.display='block'">
+    <div class="ldb" id="ldbtxt" style="display:none"><b>L'ORÉAL</b>DERMATOLOGICAL BEAUTY</div>
+  </div>
+  <div id="veil"></div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+const W = 1920, H = 1080, LOOP = 10, TAU = Math.PI * 2;
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const prog = (t, s, d) => clamp((t - s) / d);
+const eOut3 = k => 1 - Math.pow(1 - clamp(k), 3);
+const eIO3 = k => { k = clamp(k); return k < .5 ? 4*k*k*k : 1 - Math.pow(-2*k + 2, 3) / 2; };
+const eOutExpo = k => { k = clamp(k); return k === 1 ? 1 : 1 - Math.pow(2, -10 * k); };
+const eIn3 = k => Math.pow(clamp(k), 3);
+const lerp = (a, b, k) => a + (b - a) * k;
+
+// ---------- renderer ----------
+const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('gl'), antialias: false, preserveDrawingBuffer: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(1);
+renderer.setSize(W, H, false);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 0.95;
+renderer.setClearColor(0x040919, 1);
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x060d26, 0.045);
+const pmrem = new THREE.PMREMGenerator(renderer);
+// своё окружение: кобальтовый купол + белые софтбоксы → синие отражения с чистыми бликами
+const envScene = new THREE.Scene();
+envScene.add(new THREE.Mesh(new THREE.SphereGeometry(50, 64, 32), new THREE.ShaderMaterial({ side: THREE.BackSide,
+  vertexShader: `varying vec3 vP; void main(){ vP = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
+  fragmentShader: `varying vec3 vP; void main(){
+    vec3 lo = vec3(0.004, 0.008, 0.035), mid = vec3(0.04, 0.10, 0.55), hi = vec3(0.10, 0.18, 0.65);
+    vec3 c = mix(lo, mid, smoothstep(-0.6, 0.1, vP.y)); c = mix(c, hi, smoothstep(0.2, 0.9, vP.y));
+    gl_FragColor = vec4(c, 1.0); }` })));
+const box = (w, h, x, y, z, i) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ color: new THREE.Color(i, i, i * 1.05), side: THREE.DoubleSide })); m.position.set(x, y, z); m.lookAt(0, 0, 0); envScene.add(m); };
+box(14, 5, -18, 22, 14, 6);   // верхний ключевой
+box(4, 24, 26, 2, -6, 3);     // вертикальный контровой справа
+box(10, 3, 4, -10, 24, 1.2);  // нижний заполняющий
+scene.environment = pmrem.fromScene(envScene, 0.02).texture;
+scene.environmentIntensity = 1.0;
+
+const camera = new THREE.PerspectiveCamera(34, W / H, 0.05, 200);
+
+// ---------- background: глубокий градиент и мягкое сияние ----------
+const bgMat = new THREE.ShaderMaterial({
+  depthWrite: false, fog: false,
+  uniforms: { uTime: { value: 0 } },
+  vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.9999, 1.0); }`,
+  fragmentShader: `varying vec2 vUv; uniform float uTime;
+    void main(){
+      vec2 p = vUv; p.x *= 1.7778;
+      vec3 c = mix(vec3(0.0015,0.003,0.012), vec3(0.003,0.006,0.022), vUv.y);
+      float g1 = exp(-pow(distance(p, vec2(1.35, 0.42)), 2.0) * 3.2);
+      float g2 = exp(-pow(distance(p, vec2(0.25, 1.05)), 2.0) * 4.0);
+      float pulse = 0.92 + 0.08 * sin(uTime * 6.2831853 / 10.0);
+      c += vec3(0.010, 0.022, 0.110) * g1 * pulse + vec3(0.010, 0.011, 0.022) * g2;
+      gl_FragColor = vec4(c, 1.0);
+    }`
+});
+const bg = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), bgMat);
+bg.frustumCulled = false; bg.renderOrder = -10;
+scene.add(bg);
+
+// ---------- light ----------
+const key = new THREE.DirectionalLight(0xfff3e6, 1.6); key.position.set(-4, 6, 6); scene.add(key);
+const rim = new THREE.DirectionalLight(0x6f8cff, 2.6); rim.position.set(6, 2, -6); scene.add(rim);
+const fill = new THREE.PointLight(0x9fb4ff, 5, 20, 2); fill.position.set(3.5, -1, 4); scene.add(fill);
+scene.add(new THREE.AmbientLight(0x1a2a6a, 0.25));
+
+// ---------- объёмные ленты ----------
+const SEG = 300, PROF = 20;
+function makeRibbon(o) {
+  const g = new THREE.BufferGeometry();
+  const n = (SEG + 1) * (PROF + 1);
+  g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(n * 3), 3));
+  g.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(n * 3), 3));
+  const idx = [];
+  for (let i = 0; i < SEG; i++) for (let j = 0; j < PROF; j++) {
+    const a = i * (PROF + 1) + j, b = a + PROF + 1;
+    idx.push(a, b, a + 1, b, b + 1, a + 1);
+  }
+  g.setIndex(idx);
+  const mesh = new THREE.Mesh(g, o.material);
+  mesh.frustumCulled = false;
+  scene.add(mesh);
+  let silk = null;
+  if (o.silk) {
+    const sg = new THREE.BufferGeometry();
+    const sn = (SEG + 1) * 2;
+    sg.setAttribute('position', new THREE.BufferAttribute(new Float32Array(sn * 3), 3));
+    const uv = new Float32Array(sn * 2);
+    for (let i = 0; i <= SEG; i++) { uv.set([i / SEG, 0, i / SEG, 1], i * 4); }
+    sg.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+    const si = []; for (let i = 0; i < SEG; i++) { const a = i * 2; si.push(a, a + 2, a + 1, a + 2, a + 3, a + 1); }
+    sg.setIndex(si);
+    silk = new THREE.Mesh(sg, silkMaterial(o.silkColor || '#cfdcff'));
+    silk.frustumCulled = false;
+    scene.add(silk);
+  }
+  return { ...o, g, mesh, silk };
+}
+
+function silkMaterial(color) {
+  return new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, fog: false,
+    uniforms: { uTime: { value: 0 }, uColor: { value: new THREE.Color(color) }, uFrom: { value: 0 }, uTo: { value: 1 }, uAlpha: { value: 1 } },
+    vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
+    fragmentShader: `varying vec2 vUv; uniform float uTime, uFrom, uTo, uAlpha; uniform vec3 uColor;
+      void main(){
+        if (vUv.x < uFrom || vUv.x > uTo) discard;
+        float ph = uTime * 6.2831853 / 10.0;
+        float v = vUv.y + 0.06 * sin(vUv.x * 14.0 + ph * 2.0);
+        float fib = 0.0;
+        fib += pow(0.5 + 0.5 * sin(v * 90.0 + sin(vUv.x * 9.0 + ph) * 4.0), 10.0) * 0.9;
+        fib += pow(0.5 + 0.5 * sin(v * 37.0 - vUv.x * 6.0 + ph * 3.0), 6.0) * 0.5;
+        float edge = smoothstep(0.0, 0.25, vUv.y) * smoothstep(1.0, 0.65, vUv.y);
+        float ends = smoothstep(uFrom, uFrom + 0.12, vUv.x) * smoothstep(uTo, uTo - 0.12, vUv.x);
+        float body = 0.10 + 0.9 * fib;
+        float a = body * edge * ends * 0.36 * uAlpha;
+        gl_FragColor = vec4(uColor * a, a);
+      }`
+  });
+}
+
+const physical = (color, extra = {}) => new THREE.MeshPhysicalMaterial({
+  color, metalness: 0.15, roughness: 0.28, clearcoat: 0.8, clearcoatRoughness: 0.04,
+  sheen: 0.6, sheenColor: new THREE.Color('#6f8cff'), sheenRoughness: 0.4,
+  iridescence: 0.15, iridescenceIOR: 1.4, ...extra
+});
+
+const ribbons = [
+  makeRibbon({ pts: [[0.2,-5.4,-5.5],[2.6,-3.2,-4.4],[3.9,-0.9,-3.8],[4.7,1.5,-4.2],[6.6,3.6,-5.6],[9.5,4.8,-7.5]], width: .22, thick: .025, twist: 1.3, phase: .4, flutter: .22, seed: 4.1, start: .9, material: physical('#132a9e', { roughness: .35 }) }),
+  makeRibbon({ pts: [[1.0,-5.6,-1.8],[2.3,-3.0,-0.5],[2.9,-0.7,0.3],[3.4,1.3,0.1],[4.9,2.9,-0.9],[7.8,3.9,-2.6]], width: .34, thick: .035, twist: .9, phase: -.6, flutter: .24, seed: .3, start: .3, silk: true, silkLift: .5, material: physical('#2244e0') }),
+  makeRibbon({ pts: [[2.6,-5.8,-0.2],[3.4,-3.0,1.0],[3.95,-0.7,1.2],[4.7,1.2,0.6],[6.3,2.4,-0.3],[9.2,3.0,-1.4]], width: .22, thick: .03, twist: 1.15, phase: 1.2, flutter: .2, seed: 2.2, start: .55, silk: true, silkLift: -.4, silkColor: '#e8eeff', material: physical('#d9e1f6', { roughness: .22, sheenColor: new THREE.Color('#ffffff'), iridescence: .45 }) }),
+  makeRibbon({ pts: [[2.0,4.8,-10],[4.5,3.2,-9],[7,3.6,-8.5],[10,5.5,-10],[14,6.5,-12]], width: .3, thick: .03, twist: .9, phase: 2.6, flutter: .3, seed: 7.3, start: 1.4, material: physical('#1b36c4', { roughness: .4 }) }),
+  makeRibbon({ pts: [[5.5,-6,-7],[6.2,-3,-6.5],[6.6,0,-7],[8,2.5,-8.5],[11,3.8,-10]], width: .26, thick: .03, twist: 1.4, phase: .9, flutter: .26, seed: 6.1, start: 1.0, silk: true, silkLift: .5, material: physical('#2a4ae6', { roughness: .3 }) }),
+  makeRibbon({ pts: [[3.6,-5.0,3.0],[4.3,-3.0,3.3],[5.2,-1.8,2.8],[6.8,-0.8,1.8],[9.5,-0.1,0.6]], width: .15, thick: .025, twist: 1.6, phase: 2.0, flutter: .16, seed: 5.5, start: 1.2, material: physical('#3355f0') }),
+];
+
+const tmpV = new THREE.Vector3();
+function updateRibbon(r, t, from, to) {
+  const ph = t / LOOP * TAU;
+  const pts = r.pts.map((p, i) => new THREE.Vector3(
+    p[0] + Math.sin(ph + r.seed + i * 1.1) * r.flutter * .6,
+    p[1] + Math.cos(ph + r.seed * 1.3 + i * .9) * r.flutter,
+    p[2] + Math.sin(ph * 1 + r.seed * .7 + i * 1.7) * r.flutter * .8));
+  const curve = new THREE.CatmullRomCurve3(pts, false, 'centripetal');
+  const frames = curve.computeFrenetFrames(SEG, false);
+  const pos = r.g.attributes.position.array, nor = r.g.attributes.normal.array;
+  const sPos = r.silk ? r.silk.geometry.attributes.position.array : null;
+  const Np = new THREE.Vector3(), Bp = new THREE.Vector3(), P = new THREE.Vector3();
+  for (let i = 0; i <= SEG; i++) {
+    const s = i / SEG;
+    // видимый отрезок: сжимаем точки вне [from, to] в концы — лента «растёт»
+    const sv = lerp(from, to, s);
+    const ii = Math.round(sv * SEG);
+    curve.getPointAt(sv, P);
+    const N = frames.normals[ii], B = frames.binormals[ii];
+    const th = r.phase + r.twist * TAU * sv + Math.sin(ph + sv * 4 + r.seed) * .35;
+    const c = Math.cos(th), sn = Math.sin(th);
+    Np.copy(N).multiplyScalar(c).addScaledVector(B, sn);
+    Bp.copy(N).multiplyScalar(-sn).addScaledVector(B, c);
+    // бегущая волна ветра вдоль ленты
+    const wave = Math.sin(TAU * (sv * 2.2 - t / LOOP * 2) + r.seed) * .07;
+    P.addScaledVector(Bp, wave);
+    const taper = Math.pow(Math.sin(Math.PI * clamp(sv * .97 + .015)), .7);
+    const w = r.width * (.03 + .97 * taper), tk = r.thick * (.2 + .8 * taper);
+    for (let j = 0; j <= PROF; j++) {
+      const a = j / PROF * TAU, ca = Math.cos(a), sa = Math.sin(a);
+      const k = (i * (PROF + 1) + j) * 3;
+      tmpV.copy(P).addScaledVector(Np, w * ca).addScaledVector(Bp, tk * sa);
+      pos[k] = tmpV.x; pos[k + 1] = tmpV.y; pos[k + 2] = tmpV.z;
+      tmpV.copy(Np).multiplyScalar(ca / w).addScaledVector(Bp, sa / tk).normalize();
+      nor[k] = tmpV.x; nor[k + 1] = tmpV.y; nor[k + 2] = tmpV.z;
+    }
+    if (sPos) {
+      const lift = r.silkLift * Math.sin(Math.PI * sv) * (.85 + .15 * Math.sin(ph * 2 + sv * 7));
+      const sw = r.width * 2.6 * (.1 + .9 * taper);
+      const base = P.clone().addScaledVector(Bp, lift).addScaledVector(Np, Math.sin(ph + sv * 5) * .1);
+      const flow = Math.sin(TAU * (sv * 3 - t / LOOP * 3) + r.seed) * .12;
+      const k = i * 6;
+      tmpV.copy(base).addScaledVector(Np, sw * .5).addScaledVector(Bp, flow);
+      sPos[k] = tmpV.x; sPos[k + 1] = tmpV.y; sPos[k + 2] = tmpV.z;
+      tmpV.copy(base).addScaledVector(Np, -sw * .5).addScaledVector(Bp, -flow);
+      sPos[k + 3] = tmpV.x; sPos[k + 4] = tmpV.y; sPos[k + 5] = tmpV.z;
+    }
+  }
+  r.g.attributes.position.needsUpdate = true;
+  r.g.attributes.normal.needsUpdate = true;
+  r.mesh.visible = to - from > .004;
+  if (r.silk) {
+    r.silk.geometry.attributes.position.needsUpdate = true;
+    r.silk.material.uniforms.uTime.value = t;
+    r.silk.visible = r.mesh.visible;
+  }
+}
+
+// ---------- пыль и боке в потоке ветра ----------
+const NP = 2400;
+const pg = new THREE.BufferGeometry();
+const seeds = new Float32Array(NP * 4), ppos = new Float32Array(NP * 3);
+for (let i = 0; i < NP; i++) {
+  const r = (n) => { const v = Math.sin(i * 12.9898 + n * 78.233) * 43758.5453; return v - Math.floor(v); };
+  seeds.set([r(1), r(2), r(3), r(4)], i * 4);
+}
+pg.setAttribute('position', new THREE.BufferAttribute(ppos, 3));
+pg.setAttribute('seed', new THREE.BufferAttribute(seeds, 4));
+const pMat = new THREE.ShaderMaterial({
+  transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: false,
+  uniforms: { uTime: { value: 0 }, uAlpha: { value: 0 } },
+  vertexShader: `attribute vec4 seed; uniform float uTime; varying float vA; varying float vS;
+    void main(){
+      float laps = 1.0 + floor(seed.w * 2.0);
+      float k = fract(seed.x + uTime / 10.0 * laps);
+      vec3 p;
+      p.x = mix(-14.0, 14.0, k);
+      p.z = mix(-12.0, 7.5, seed.z);
+      p.y = mix(-6.0, 6.0, seed.y) + (k - 0.5) * 3.2 + sin(k * 12.566 + seed.w * 20.0) * 0.35;
+      vec4 mv = modelViewMatrix * vec4(p, 1.0);
+      gl_Position = projectionMatrix * mv;
+      float d = -mv.z;
+      float focus = abs(d - 9.0);
+      vS = clamp(focus / 6.0, 0.0, 1.0);
+      gl_PointSize = (2.0 + 60.0 * pow(vS, 1.6) * step(0.55, seed.w + 0.1)) * (9.0 / max(d, 0.5)) + 1.5;
+      vA = sin(k * 3.14159) * (0.35 + 0.65 * seed.w) / (1.0 + vS * 5.0);
+    }`,
+  fragmentShader: `varying float vA; varying float vS; uniform float uAlpha;
+    void main(){
+      vec2 c = gl_PointCoord - 0.5; float r = length(c);
+      float disk = mix(smoothstep(0.5, 0.0, r), smoothstep(0.5, 0.42, r) * 0.6 + smoothstep(0.5, 0.0, r) * 0.25, vS);
+      float a = disk * vA * uAlpha;
+      gl_FragColor = vec4(vec3(0.55, 0.65, 1.0) * a * 0.7, a);
+    }`
+});
+const points = new THREE.Points(pg, pMat); points.frustumCulled = false; scene.add(points);
+
+// ---------- лучи света сверху-слева ----------
+const shaftMat = new THREE.ShaderMaterial({
+  transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false,
+  uniforms: { uTime: { value: 0 }, uAlpha: { value: 0 } },
+  vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
+  fragmentShader: `varying vec2 vUv; uniform float uTime, uAlpha;
+    void main(){
+      float ph = uTime * 6.2831853 / 10.0;
+      float rays = 0.0;
+      rays += pow(0.5 + 0.5 * sin(vUv.x * 23.0 + ph), 6.0);
+      rays += pow(0.5 + 0.5 * sin(vUv.x * 41.0 - ph * 2.0 + 1.3), 10.0) * 0.6;
+      float fall = pow(1.0 - vUv.y, 1.8) * smoothstep(0.0, 0.3, vUv.x) * smoothstep(1.0, 0.6, vUv.x);
+      float a = rays * fall * 0.025 * uAlpha;
+      gl_FragColor = vec4(vec3(0.75, 0.82, 1.0) * a, a);
+    }`
+});
+const shafts = new THREE.Mesh(new THREE.PlaneGeometry(16, 14), shaftMat);
+shafts.position.set(-1, 2.5, -6); shafts.rotation.z = -0.5;
+shafts.frustumCulled = false; scene.add(shafts);
+
+// ---------- post ----------
+const rt = new THREE.WebGLRenderTarget(W, H, { type: THREE.HalfFloatType, samples: 4 });
+const composer = new EffectComposer(renderer, rt);
+composer.setPixelRatio(1); composer.setSize(W, H);
+composer.addPass(new RenderPass(scene, camera));
+const bloom = new UnrealBloomPass(new THREE.Vector2(W, H), 0.45, 0.6, 0.86);
+composer.addPass(bloom);
+composer.addPass(new OutputPass());
+const finish = new ShaderPass({
+  uniforms: { tDiffuse: { value: null }, uTime: { value: 0 }, uFade: { value: 1 } },
+  vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
+  fragmentShader: `uniform sampler2D tDiffuse; uniform float uTime, uFade; varying vec2 vUv;
+    float h(vec2 p){ return fract(sin(dot(p, vec2(12.9898,78.233))) * 43758.5453); }
+    void main(){
+      vec2 d = vUv - 0.5;
+      float ca = dot(d, d) * 0.006;
+      vec3 c = vec3(texture2D(tDiffuse, vUv + d * ca).r, texture2D(tDiffuse, vUv).g, texture2D(tDiffuse, vUv - d * ca).b);
+      float vig = smoothstep(1.05, 0.25, length(d * vec2(1.25, 1.0)));
+      c *= mix(0.55, 1.0, vig);
+      c += (h(vUv * 1000.0 + fract(uTime * 7.31)) - 0.5) * 0.028;
+      gl_FragColor = vec4(c * uFade, 1.0);
+    }`
+});
+composer.addPass(finish);
+
+// ---------- DOM ----------
+const $ = id => document.getElementById(id);
+const lines = [...document.querySelectorAll('#head .ln')];
+const chars = [];
+lines.forEach((ln, li) => {
+  const txt = ln.textContent; ln.textContent = '';
+  [...txt].forEach((ch, ci) => {
+    const s = document.createElement('span'); s.className = 'ch'; s.textContent = ch === ' ' ? ' ' : ch;
+    ln.appendChild(s); chars.push({ el: s, i: chars.length, li });
+  });
+});
+const rings = [...document.querySelectorAll('.ring')], slashes = [...document.querySelectorAll('.slash')], glyphs = [...document.querySelectorAll('.glyph')];
+
+function windIn(el, k, dist = 50) {
+  const e = eOutExpo(k);
+  el.style.opacity = clamp(k * 1.5);
+  el.style.transform = `translateX(${(1 - e) * -dist}px)`;
+  el.style.filter = `blur(${(1 - e) * 12}px)`;
+}
+function windOut(el, k, dist = 140) {
+  const e = eIn3(k);
+  el.style.opacity = 1 - clamp(k * 1.2);
+  el.style.transform = `translateX(${e * dist}px)`;
+  el.style.filter = `blur(${e * 14}px)`;
+}
+
+// ---------- камера ----------
+// Удержание (6–16 с) — периодичная траектория, поэтому луп бесшовный.
+function holdCam(t) {
+  const ph = t / LOOP * TAU;
+  return { pos: new THREE.Vector3(0.15 + Math.sin(ph) * .22, 0.15 + Math.sin(ph * 2) * .06, 9.2 + Math.cos(ph) * .18),
+           look: new THREE.Vector3(0.75 + Math.sin(ph) * .08, 0.15, 0) };
+}
+
+window.DURATION = 20;
+window.LOOP_RANGE = [6, 16];
+
+window.render = function (t) {
+  const out = prog(t, 16, 3.6);
+
+  // камера: пролёт сквозь ленты → отъезд в композицию → наезд в аутро
+  const h = holdCam(t);
+  const k = eIO3(prog(t, 0, 6));
+  const startPos = new THREE.Vector3(1.0, -4.2, 3.6), startLook = new THREE.Vector3(3.2, -1.2, -0.4);
+  const pos = startPos.clone().lerp(h.pos, k), look = startLook.clone().lerp(h.look, k);
+  const ko = eIn3(out);
+  pos.lerp(new THREE.Vector3(3.2, 0.9, 3.4), ko * .8);
+  look.lerp(new THREE.Vector3(6, 2.5, -2), ko * .8);
+  camera.position.copy(pos); camera.lookAt(look);
+  camera.rotateZ(lerp(.12, 0, k) + Math.sin(t / LOOP * TAU) * .006);
+  camera.updateMatrixWorld();
+
+  ribbons.forEach(r => {
+    const grow = eOut3(prog(t, .2 + r.start * .7, 3.4));
+    const tail = eIO3(prog(t, 16.2 + r.start * .5, 3));
+    updateRibbon(r, t, Math.min(tail, grow - .001), Math.max(grow, .001));
+    if (r.silk) r.silk.material.uniforms.uAlpha.value = clamp(t / 3) * (1 - out);
+  });
+
+  bgMat.uniforms.uTime.value = t;
+  pMat.uniforms.uTime.value = t; pMat.uniforms.uAlpha.value = clamp(t / 1.5) * (1 - out * .7);
+  shaftMat.uniforms.uTime.value = t; shaftMat.uniforms.uAlpha.value = clamp((t - .5) / 3) * (1 - out);
+  finish.uniforms.uTime.value = t;
+  finish.uniforms.uFade.value = 1 - eIn3(prog(t, 18.6, 1.4));
+  composer.render();
+
+  // типографика
+  $('veil').style.opacity = 1 - clamp(t / 0.8);
+  const items = [['kicker', 3.0], ['icons', 3.3], ['rule', 4.6], ['body', 4.9], ['en', 5.2], ['sign', 5.6]];
+  items.forEach(([id, st], n) => {
+    const el = $(id);
+    windIn(el, prog(t, st, 1.3));
+    if (t > 16) windOut(el, prog(t, 16 + n * .07, 1.8));
+  });
+  $('kicker').querySelector('i').style.transform = `scaleX(${eOutExpo(prog(t, 3.2, 1.2))})`;
+  $('rule').style.transform += ` scaleX(${eOutExpo(prog(t, 4.6, 1.6))})`;
+
+  chars.forEach(c => {
+    const st = 3.6 + c.i * 0.028 + c.li * 0.12;
+    const kk = prog(t, st, 1.1), e = eOutExpo(kk);
+    let o = clamp(kk * 1.6), x = 0, y = (1 - e) * 46, b = (1 - e) * 14;
+    if (t > 16) { const q = eIn3(prog(t, 16.05 + c.i * .012, 1.6)); o *= 1 - q; x = q * 180; b += q * 16; }
+    c.el.style.opacity = o;
+    c.el.style.transform = `translate(${x}px, ${y}px)`;
+    c.el.style.filter = `blur(${b}px)`;
+  });
+  // блик по заголовку: в интро и раз в цикл удержания
+  const sweep = t < 6 ? prog(t, 4.6, 1.6) : prog(((t - 6) % LOOP), 4, 1.8);
+  $('shine').style.backgroundPosition = `${lerp(100, -10, eIO3(sweep))}% 0`;
+  $('shine').style.opacity = (sweep > 0 && sweep < 1 ? 1 : 0) * (t > 16 ? 0 : 1);
+
+  rings.forEach((r, i) => r.style.strokeDashoffset = 1 - eOut3(prog(t, 3.4 + i * .18, 1.1)));
+  glyphs.forEach((g, i) => g.style.opacity = eOut3(prog(t, 3.7 + i * .18, .8)));
+  slashes.forEach((s, i) => s.style.strokeDashoffset = 1 - eOutExpo(prog(t, 4.3 + i * .18, .8)));
+};
+
+window.render(location.hash ? parseFloat(location.hash.slice(1)) : 9);
+window.READY = true;
+</script>
+</body>
+</html>

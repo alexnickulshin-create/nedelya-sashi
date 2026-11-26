@@ -12,9 +12,22 @@ const fs = require('fs');
   const still = flag('--still', null);
   const [src, out, s0, s1] = args;
 
-  const browser = await chromium.launch();
+  // локальный статический сервер: ES-модули (three.js) не грузятся с file://
+  const http = require('http');
+  const root = path.dirname(path.resolve(src));
+  const types = { '.html': 'text/html', '.js': 'text/javascript', '.otf': 'font/otf', '.ttf': 'font/ttf', '.woff2': 'font/woff2', '.png': 'image/png', '.svg': 'image/svg+xml' };
+  const server = http.createServer((req, res) => {
+    const f = path.join(root, decodeURIComponent(req.url.split(/[?#]/)[0]));
+    fs.readFile(f, (e, d) => { if (e) { res.writeHead(404); return res.end(); } res.writeHead(200, { 'Content-Type': types[path.extname(f)] || 'application/octet-stream' }); res.end(d); });
+  }).listen(0);
+  const port = server.address().port;
+
+  const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
   const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } });
-  await page.goto('file://' + path.resolve(src));
+  page.on('pageerror', e => console.error('PAGE ERROR', e.message));
+  page.on('console', m => { if (m.type() === 'error') console.error('CONSOLE', m.text()); });
+  await page.goto(`http://localhost:${port}/` + path.basename(src));
+  await page.waitForFunction(() => window.render && (window.READY !== false), null, { timeout: 120000 });
   await page.evaluate(() => document.fonts.ready);
   const size = await page.evaluate(() => { const s = document.getElementById('stage'); return [s.offsetWidth, s.offsetHeight]; });
   await page.setViewportSize({ width: size[0], height: size[1] });
@@ -26,7 +39,7 @@ const fs = require('fs');
       await page.evaluate(t => window.render(t), t);
       await page.screenshot({ path: out.replace(/\.png$/, '') + `_t${t}.png` });
     }
-    await browser.close();
+    await browser.close(); server.close();
     return;
   }
 
@@ -38,10 +51,10 @@ const fs = require('fs');
     await page.evaluate(t => window.render(t), start + i / fps);
     const buf = await page.screenshot({ type: 'jpeg', quality: 96 });
     if (!ff.stdin.write(buf)) await new Promise(r => ff.stdin.once('drain', r));
-    if (i % 50 === 0) process.stdout.write(`${i}/${n}\n`);
+    if (i % 50 === 0) process.stdout.write(`${i}/${n} ${new Date().toISOString().slice(11,19)}\n`);
   }
   ff.stdin.end();
   await new Promise(r => ff.on('close', r));
-  await browser.close();
+  await browser.close(); server.close();
   console.log('done', out);
 })();
