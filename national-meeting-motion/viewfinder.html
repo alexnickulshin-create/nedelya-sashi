@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Дисклеймер · Ветер гасит запись</title>
+<style>
+  @font-face { font-family: Brand; font-weight: 400; src: local('Century Gothic'), local('CenturyGothic'), url(fonts/CenturyGothic.ttf), url(fonts/GOTHIC.TTF), url(fonts/URWGothic-Book.otf); }
+  @font-face { font-family: Brand; font-weight: 700; src: local('Century Gothic Bold'), local('CenturyGothic-Bold'), url(fonts/CenturyGothic-Bold.ttf), url(fonts/GOTHICB.TTF), url(fonts/URWGothic-Demi.otf); }
+  :root { --pearl: #f4f6fc; --ice: #9fb4ff; --mist: #c4cde8; --dim: #8592b8; }
+  html, body { margin: 0; background: #040919; }
+  #stage { position: relative; width: 1920px; height: 1080px; overflow: hidden; font-family: Brand, sans-serif; color: var(--pearl); background: #040919; }
+  #gl { position: absolute; inset: 0; width: 1920px; height: 1080px; }
+  .layer, .hud { position: absolute; will-change: transform, filter, opacity; }
+  .layer { left: 156px; }
+
+  /* видоискатель */
+  .br { width: 74px; height: 74px; border: 0 solid var(--pearl); opacity: .9; }
+  #b1 { left: 70px; top: 70px; border-left-width: 3px; border-top-width: 3px; }
+  #b2 { right: 70px; top: 70px; border-right-width: 3px; border-top-width: 3px; }
+  #b3 { left: 70px; bottom: 70px; border-left-width: 3px; border-bottom-width: 3px; }
+  #b4 { right: 70px; bottom: 70px; border-right-width: 3px; border-bottom-width: 3px; }
+  .grid { background: rgba(244,246,252,.13); }
+  #g1 { left: 640px; top: 70px; width: 1px; height: 940px; } #g2 { left: 1280px; top: 70px; width: 1px; height: 940px; }
+  #g3 { left: 70px; top: 360px; width: 1780px; height: 1px; } #g4 { left: 70px; top: 720px; width: 1780px; height: 1px; }
+  #focus { left: 890px; top: 470px; width: 140px; height: 140px; border: 2px solid var(--pearl); box-sizing: border-box; }
+  #focus::before, #focus::after { content: ''; position: absolute; background: var(--pearl); }
+  #focus::before { left: 50%; top: -1px; width: 2px; height: 14px; } #focus::after { left: 50%; bottom: -1px; width: 2px; height: 14px; }
+  #rec { left: 190px; top: 163px; font-size: 26px; letter-spacing: .16em; font-weight: 700; display: flex; gap: 22px; }
+  #rec span:last-child { font-weight: 400; font-variant-numeric: tabular-nums; }
+  #dot { left: 156px; top: 171px; width: 18px; height: 18px; border-radius: 50%; }
+  #fmt { right: 156px; top: 163px; font-size: 24px; letter-spacing: .2em; display: flex; align-items: center; gap: 22px; }
+  #fmt i { display: block; width: 44px; height: 20px; border: 2px solid var(--pearl); border-radius: 4px; position: relative; box-sizing: border-box; }
+  #fmt i::before { content: ''; position: absolute; left: 2px; top: 2px; bottom: 2px; width: 26px; background: var(--pearl); border-radius: 1px; }
+  #fmt i::after { content: ''; position: absolute; right: -6px; top: 4px; width: 3px; height: 8px; background: var(--pearl); }
+  #mode { left: 0; width: 1920px; top: 934px; text-align: center; font-size: 22px; letter-spacing: .3em; color: var(--dim); }
+  #mode b { color: var(--ice); font-weight: 700; margin: 0 44px; }
+
+  /* финальная типографика */
+  #kicker { left: 190px; top: 166px; font-size: 22px; letter-spacing: .34em; color: var(--ice); text-transform: uppercase; }
+  #head { top: 372px; font-size: 138px; font-weight: 700; line-height: 1.0; letter-spacing: -0.015em; white-space: nowrap; }
+  #head .ln { display: block; position: relative; }
+  #head .ch { display: inline-block; will-change: transform, filter, opacity; text-shadow: 0 0 40px rgba(120,150,255,.25); }
+  #shine { position: absolute; left: 0; top: 0; color: transparent; pointer-events: none;
+           background: linear-gradient(100deg, rgba(255,255,255,0) 42%, rgba(200,215,255,.95) 49%, #ffffff 50%, rgba(200,215,255,.95) 51%, rgba(255,255,255,0) 58%);
+           background-size: 300% 100%; -webkit-background-clip: text; background-clip: text; mix-blend-mode: screen; }
+  #rule { top: 684px; height: 1px; width: 520px; background: linear-gradient(90deg, var(--ice), rgba(159,180,255,0)); transform-origin: left; }
+  #body { top: 724px; font-size: 38px; line-height: 1.34; color: var(--mist); }
+  #en { top: 846px; font-size: 22px; letter-spacing: .14em; text-transform: uppercase; color: var(--dim); }
+  #sign { top: 950px; display: flex; align-items: center; gap: 30px; }
+  #sign .w { font-size: 30px; font-weight: 700; letter-spacing: .02em; }
+  #sign .bar { width: 1px; height: 46px; background: var(--pearl); opacity: .3; }
+  #logo { height: 56px; width: auto; display: block; filter: brightness(0) invert(1); }
+  #sign .ldb { font-size: 15px; letter-spacing: .3em; line-height: 1.45; color: var(--mist); }
+  #sign .ldb b { font-weight: 700; letter-spacing: .22em; font-size: 21px; display: block; color: var(--pearl); }
+  #veil { position: absolute; inset: 0; background: #040919; pointer-events: none; }
+</style>
+<script type="importmap">
+{ "imports": { "three": "./node_modules/three/build/three.module.js", "three/addons/": "./node_modules/three/examples/jsm/" } }
+</script>
+</head>
+<body>
+<div id="stage">
+  <canvas id="gl" width="1920" height="1080"></canvas>
+
+  <div class="hud grid" id="g1"></div><div class="hud grid" id="g2"></div><div class="hud grid" id="g3"></div><div class="hud grid" id="g4"></div>
+  <div class="hud br" id="b1"></div><div class="hud br" id="b2"></div><div class="hud br" id="b3"></div><div class="hud br" id="b4"></div>
+  <div class="hud" id="focus"></div>
+  <div class="hud" id="rec"><span>REC</span><span id="tc">00:00:00:00</span></div>
+  <div class="hud" id="fmt">4K · 60<i></i></div>
+  <div class="hud" id="mode">ФОТО<b>ВИДЕО</b>ПОРТРЕТ</div>
+  <div class="hud" id="dot"></div>
+
+  <div class="layer" id="kicker">National Meeting LDB · 16–17.12</div>
+  <div class="layer" id="head"><span class="ln">Съёмка</span><span class="ln">запрещена</span><div id="shine">Съёмка<br>запрещена</div></div>
+  <div class="layer" id="rule"></div>
+  <div class="layer" id="body">Всё, что прозвучит в этом зале,<br>остаётся в этом зале.</div>
+  <div class="layer" id="en">No photo or video recording</div>
+  <div class="layer" id="sign">
+    <div class="w">Ветер перемен</div>
+    <div class="bar"></div>
+    <img id="logo" src="logo/ldb-logo.png" alt="L'Oréal Dermatological Beauty" onerror="this.remove();document.getElementById('ldbtxt').style.display='block'">
+    <div class="ldb" id="ldbtxt" style="display:none"><b>L'ORÉAL</b>DERMATOLOGICAL BEAUTY</div>
+  </div>
+  <div id="veil"></div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+const W = 1920, H = 1080, LOOP = 10, TAU = Math.PI * 2;
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const prog = (t, s, d) => clamp((t - s) / d);
+const eOut3 = k => 1 - Math.pow(1 - clamp(k), 3);
+const eIO3 = k => { k = clamp(k); return k < .5 ? 4*k*k*k : 1 - Math.pow(-2*k + 2, 3) / 2; };
+const eOutExpo = k => { k = clamp(k); return k === 1 ? 1 : 1 - Math.pow(2, -10 * k); };
+const eIn3 = k => Math.pow(clamp(k), 3);
+const lerp = (a, b, k) => a + (b - a) * k;
+
+// ---------- renderer ----------
+const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('gl'), antialias: false, preserveDrawingBuffer: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(1);
+renderer.setSize(W, H, false);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 0.95;
+renderer.setClearColor(0x040919, 1);
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x060d26, 0.045);
+const pmrem = new THREE.PMREMGenerator(renderer);
+// своё окружение: кобальтовый купол + белые софтбоксы → синие отражения с чистыми бликами
+const envScene = new THREE.Scene();
+envScene.add(new THREE.Mesh(new THREE.SphereGeometry(50, 64, 32), new THREE.ShaderMaterial({ side: THREE.BackSide,
+  vertexShader: `varying vec3 vP; void main(){ vP = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
+  fragmentShader: `varying vec3 vP; void main(){
+    vec3 lo = vec3(0.004, 0.008, 0.035), mid = vec3(0.04, 0.10, 0.55), hi = vec3(0.10, 0.18, 0.65);
+    vec3 c = mix(lo, mid, smoothstep(-0.6, 0.1, vP.y)); c = mix(c, hi, smoothstep(0.2, 0.9, vP.y));
+    gl_FragColor = vec4(c, 1.0); }` })));
+const box = (w, h, x, y, z, i) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ color: new THREE.Color(i, i, i * 1.05), side: THREE.DoubleSide })); m.position.set(x, y, z); m.lookAt(0, 0, 0); envScene.add(m); };
+box(14, 5, -18, 22, 14, 6);   // верхний ключевой
+box(4, 24, 26, 2, -6, 3);     // вертикальный контровой справа
+box(10, 3, 4, -10, 24, 1.2);  // нижний заполняющий
+scene.environment = pmrem.fromScene(envScene, 0.02).texture;
+scene.environmentIntensity = 1.0;
+
+const camera = new THREE.PerspectiveCamera(34, W / H, 0.05, 200);
+
+// ---------- background: глубокий градиент и мягкое сияние ----------
+const bgMat = new THREE.ShaderMaterial({
+  depthWrite: false, fog: false,
+  uniforms: { uTime: { value: 0 } },
+  vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.9999, 1.0); }`,
+  fragmentShader: `varying vec2 vUv; uniform float uTime;
+    void main(){
+      vec2 p = vUv; p.x *= 1.7778;
+      vec3 c = mix(vec3(0.0015,0.003,0.012), vec3(0.003,0.006,0.022), vUv.y);
+      float g1 = exp(-pow(distance(p, vec2(1.35, 0.42)), 2.0) * 3.2);
+      float g2 = exp(-pow(distance(p, vec2(0.25, 1.05)), 2.0) * 4.0);
+      float pulse = 0.92 + 0.08 * sin(uTime * 6.2831853 / 10.0);
+      c += vec3(0.010, 0.022, 0.110) * g1 * pulse + vec3(0.010, 0.011, 0.022) * g2;
+      gl_FragColor = vec4(c, 1.0);
+    }`
+});
+const bg = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), bgMat);
+bg.frustumCulled = false; bg.renderOrder = -10;
+scene.add(bg);
+
+// ---------- light ----------
+const key = new THREE.DirectionalLight(0xfff3e6, 1.6); key.position.set(-4, 6, 6); scene.add(key);
+const rim = new THREE.DirectionalLight(0x6f8cff, 2.6); rim.position.set(6, 2, -6); scene.add(rim);
+const fill = new THREE.PointLight(0x9fb4ff, 5, 20, 2); fill.position.set(3.5, -1, 4); scene.add(fill);
+scene.add(new THREE.AmbientLight(0x1a2a6a, 0.25));
+
+// ---------- объёмные ленты ----------
+const SEG = 300, PROF = 20;
+function makeRibbon(o) {
+  const g = new THREE.BufferGeometry();
+  const n = (SEG + 1) * (PROF + 1);
+  g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(n * 3), 3));
+  g.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(n * 3), 3));
+  const idx = [];
+  for (let i = 0; i < SEG; i++) for (let j = 0; j < PROF; j++) {
+    const a = i * (PROF + 1) + j, b = a + PROF + 1;
+    idx.push(a, b, a + 1, b, b + 1, a + 1);
+  }
+  g.setIndex(idx);
+  const mesh = new THREE.Mesh(g, o.material);
+  mesh.frustumCulled = false;
+  scene.add(mesh);
+  let silk = null;
+  if (o.silk) {
+    const sg = new THREE.BufferGeometry();
+    const sn = (SEG + 1) * 2;
+    sg.setAttribute('position', new THREE.BufferAttribute(new Float32Array(sn * 3), 3));
+    const uv = new Float32Array(sn * 2);
+    for (let i = 0; i <= SEG; i++) { uv.set([i / SEG, 0, i / SEG, 1], i * 4); }
+    sg.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+    const si = []; for (let i = 0; i < SEG; i++) { const a = i * 2; si.push(a, a + 2, a + 1, a + 2, a + 3, a + 1); }
+    sg.setIndex(si);
+    silk = new THREE.Mesh(sg, silkMaterial(o.silkColor || '#cfdcff'));
+    silk.frustumCulled = false;
+    scene.add(silk);
+  }
+  return { ...o, g, mesh, silk };
+}
+
+function silkMaterial(color) {
+  return new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, fog: false,
+    uniforms: { uTime: { value: 0 }, uColor: { value: new THREE.Color(color) }, uFrom: { value: 0 }, uTo: { value: 1 }, uAlpha: { value: 1 } },
+    vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
+    fragmentShader: `varying vec2 vUv; uniform float uTime, uFrom, uTo, uAlpha; uniform vec3 uColor;
+      void main(){
+        if (vUv.x < uFrom || vUv.x > uTo) discard;
+        float ph = uTime * 6.2831853 / 10.0;
+        float v = vUv.y + 0.06 * sin(vUv.x * 14.0 + ph * 2.0);
+        float fib = 0.0;
+        fib += pow(0.5 + 0.5 * sin(v * 90.0 + sin(vUv.x * 9.0 + ph) * 4.0), 10.0) * 0.9;
+        fib += pow(0.5 + 0.5 * sin(v * 37.0 - vUv.x * 6.0 + ph * 3.0), 6.0) * 0.5;
+        float edge = smoothstep(0.0, 0.25, vUv.y) * smoothstep(1.0, 0.65, vUv.y);
+        float ends = smoothstep(uFrom, uFrom + 0.12, vUv.x) * smoothstep(uTo, uTo - 0.12, vUv.x);
+        float body = 0.10 + 0.9 * fib;
+        float a = body * edge * ends * 0.36 * uAlpha;
+        gl_FragColor = vec4(uColor * a, a);
+      }`
+  });
+}
+
+const physical = (color, extra = {}) => new THREE.MeshPhysicalMaterial({
+  color, metalness: 0.15, roughness: 0.28, clearcoat: 0.8, clearcoatRoughness: 0.04,
+  sheen: 0.6, sheenColor: new THREE.Color('#6f8cff'), sheenRoughness: 0.4,
+  iridescence: 0.15, iridescenceIOR: 1.4, ...extra
+});
+
+const RING = new THREE.Vector3(2.35, 0.1, 0), RING_R = 1.36;
+const ribbons = [
+  makeRibbon({ pts: [[-7,-4.6,4.4],[-1.6,-2.9,2.7],[1.15,-1.1,1.05],[2.35,0.1,0],[3.55,1.3,-1.05],[5.6,3.1,-2.5],[9.5,5.4,-4.8]], fw: [1,1,.25,0,.25,1,1],
+    width: .33, thick: .04, twist: .75, flutter: .26, seed: .3, silk: true, silkLift: .55, material: physical('#2244e0') }),
+];
+ribbons.forEach(r => {  // доля длины, на которой лента проходит центр кольца
+  const c = new THREE.CatmullRomCurve3(r.pts.map(p => new THREE.Vector3(...p)), false, 'centripetal');
+  let best = 1e9; for (let i = 0; i <= 400; i++) { const d = c.getPointAt(i / 400).distanceTo(RING); if (d < best) { best = d; r.mid = i / 400; } }
+});
+
+// кольцо знака — настоящий тор, лента проходит сквозь него
+const ringMat = new THREE.MeshPhysicalMaterial({ color: '#f4f6fc', metalness: .2, roughness: .25, clearcoat: 1, emissive: new THREE.Color('#8fa6ff'), emissiveIntensity: .55 });
+const ring = new THREE.Mesh(new THREE.BufferGeometry(), ringMat);
+ring.position.copy(RING); ring.rotation.z = Math.PI * .75; ring.frustumCulled = false; scene.add(ring);
+let ringArc = -1;
+function setRing(k) {
+  k = Math.round(k * 200) / 200;
+  if (k === ringArc) return; ringArc = k;
+  ring.geometry.dispose();
+  ring.visible = k > 0.004;
+  if (ring.visible) ring.geometry = new THREE.TorusGeometry(RING_R, .03, 20, Math.max(8, Math.round(220 * k)), TAU * k);
+}
+
+const tmpV = new THREE.Vector3();
+function updateRibbon(r, t, from, to) {
+  const ph = t / LOOP * TAU;
+  const pts = r.pts.map((p, i) => { const f = r.flutter * r.fw[i]; return new THREE.Vector3(
+    p[0] + Math.sin(ph + r.seed + i * 1.1) * f * .6,
+    p[1] + Math.cos(ph + r.seed * 1.3 + i * .9) * f,
+    p[2] + Math.sin(ph + r.seed * .7 + i * 1.7) * f * .8); });
+  const curve = new THREE.CatmullRomCurve3(pts, false, 'centripetal');
+  const pos = r.g.attributes.position.array, nor = r.g.attributes.normal.array;
+  const sPos = r.silk ? r.silk.geometry.attributes.position.array : null;
+  const Np = new THREE.Vector3(), Bp = new THREE.Vector3(), P = new THREE.Vector3(), T = new THREE.Vector3(), N0 = new THREE.Vector3(), B0 = new THREE.Vector3();
+  const VIEW = new THREE.Vector3(0, 0, 1);
+  for (let i = 0; i <= SEG; i++) {
+    const s = i / SEG;
+    const sv = clamp(lerp(from, to, s));
+    curve.getPointAt(sv, P); curve.getTangentAt(sv, T);
+    N0.crossVectors(T, VIEW).normalize(); B0.crossVectors(N0, T).normalize();
+    // у кольца лента спокойна и смотрит на зрителя — читается как черта знака
+    const calm = THREE.MathUtils.smoothstep(Math.abs(sv - r.mid), .07, .3);
+    const th = .42 + r.twist * TAU * (sv - r.mid) * calm + Math.sin(ph + sv * 4 + r.seed) * .4 * calm;
+    const c = Math.cos(th), sn = Math.sin(th);
+    Np.copy(N0).multiplyScalar(c).addScaledVector(B0, sn);
+    Bp.copy(N0).multiplyScalar(-sn).addScaledVector(B0, c);
+    const wave = Math.sin(TAU * (sv * 2.2 - t / LOOP * 2) + r.seed) * .08 * calm;
+    P.addScaledVector(Bp, wave);
+    const taper = Math.pow(Math.sin(Math.PI * clamp(sv * .97 + .015)), .7);
+    const w = r.width * (.03 + .97 * taper), tk = r.thick * (.2 + .8 * taper);
+    for (let j = 0; j <= PROF; j++) {
+      const a = j / PROF * TAU, ca = Math.cos(a), sa = Math.sin(a);
+      const k = (i * (PROF + 1) + j) * 3;
+      tmpV.copy(P).addScaledVector(Np, w * ca).addScaledVector(Bp, tk * sa);
+      pos[k] = tmpV.x; pos[k + 1] = tmpV.y; pos[k + 2] = tmpV.z;
+      tmpV.copy(Np).multiplyScalar(ca / w).addScaledVector(Bp, sa / tk).normalize();
+      nor[k] = tmpV.x; nor[k + 1] = tmpV.y; nor[k + 2] = tmpV.z;
+    }
+    if (sPos) {
+      const lift = r.silkLift * (.25 + .75 * calm) * Math.sin(Math.PI * sv) * (.85 + .15 * Math.sin(ph * 2 + sv * 7));
+      const sw = r.width * (1.5 + 1.1 * calm) * (.1 + .9 * taper);
+      const base = P.clone().addScaledVector(Bp, lift).addScaledVector(Np, Math.sin(ph + sv * 5) * .1);
+      const flow = Math.sin(TAU * (sv * 3 - t / LOOP * 3) + r.seed) * .12;
+      const k = i * 6;
+      tmpV.copy(base).addScaledVector(Np, sw * .5).addScaledVector(Bp, flow);
+      sPos[k] = tmpV.x; sPos[k + 1] = tmpV.y; sPos[k + 2] = tmpV.z;
+      tmpV.copy(base).addScaledVector(Np, -sw * .5).addScaledVector(Bp, -flow);
+      sPos[k + 3] = tmpV.x; sPos[k + 4] = tmpV.y; sPos[k + 5] = tmpV.z;
+    }
+  }
+  r.g.attributes.position.needsUpdate = true;
+  r.g.attributes.normal.needsUpdate = true;
+  r.mesh.visible = to - from > .004;
+  if (r.silk) {
+    r.silk.geometry.attributes.position.needsUpdate = true;
+    r.silk.material.uniforms.uTime.value = t;
+    r.silk.visible = r.mesh.visible;
+  }
+}
+
+// ---------- пыль и боке в потоке ветра ----------
+const NP = 2400;
+const pg = new THREE.BufferGeometry();
+const seeds = new Float32Array(NP * 4), ppos = new Float32Array(NP * 3);
+for (let i = 0; i < NP; i++) {
+  const r = (n) => { const v = Math.sin(i * 12.9898 + n * 78.233) * 43758.5453; return v - Math.floor(v); };
+  seeds.set([r(1), r(2), r(3), r(4)], i * 4);
+}
+pg.setAttribute('position', new THREE.BufferAttribute(ppos, 3));
+pg.setAttribute('seed', new THREE.BufferAttribute(seeds, 4));
+const pMat = new THREE.ShaderMaterial({
+  transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: false,
+  uniforms: { uTime: { value: 0 }, uAlpha: { value: 0 }, uGust: { value: 0 } },
+  vertexShader: `attribute vec4 seed; uniform float uTime, uGust; varying float vA; varying float vS;
+    void main(){
+      float laps = 1.0 + floor(seed.w * 2.0);
+      float k = fract(seed.x + (uTime / 10.0 + uGust) * laps);
+      vec3 p;
+      p.x = mix(-14.0, 14.0, k);
+      p.z = mix(-12.0, 7.5, seed.z);
+      p.y = mix(-6.0, 6.0, seed.y) + (k - 0.5) * 3.2 + sin(k * 12.566 + seed.w * 20.0) * 0.35;
+      vec4 mv = modelViewMatrix * vec4(p, 1.0);
+      gl_Position = projectionMatrix * mv;
+      float d = -mv.z;
+      float focus = abs(d - 9.0);
+      vS = clamp(focus / 6.0, 0.0, 1.0);
+      gl_PointSize = (2.0 + 60.0 * pow(vS, 1.6) * step(0.55, seed.w + 0.1)) * (9.0 / max(d, 0.5)) + 1.5;
+      vA = sin(k * 3.14159) * (0.35 + 0.65 * seed.w) / (1.0 + vS * 5.0);
+    }`,
+  fragmentShader: `varying float vA; varying float vS; uniform float uAlpha;
+    void main(){
+      vec2 c = gl_PointCoord - 0.5; float r = length(c);
+      float disk = mix(smoothstep(0.5, 0.0, r), smoothstep(0.5, 0.42, r) * 0.6 + smoothstep(0.5, 0.0, r) * 0.25, vS);
+      float a = disk * vA * uAlpha;
+      gl_FragColor = vec4(vec3(0.55, 0.65, 1.0) * a * 0.7, a);
+    }`
+});
+const points = new THREE.Points(pg, pMat); points.frustumCulled = false; scene.add(points);
+
+// ---------- лучи света сверху-слева ----------
+const shaftMat = new THREE.ShaderMaterial({
+  transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false,
+  uniforms: { uTime: { value: 0 }, uAlpha: { value: 0 } },
+  vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
+  fragmentShader: `varying vec2 vUv; uniform float uTime, uAlpha;
+    void main(){
+      float ph = uTime * 6.2831853 / 10.0;
+      float rays = 0.0;
+      rays += pow(0.5 + 0.5 * sin(vUv.x * 23.0 + ph), 6.0);
+      rays += pow(0.5 + 0.5 * sin(vUv.x * 41.0 - ph * 2.0 + 1.3), 10.0) * 0.6;
+      float fall = pow(1.0 - vUv.y, 1.8) * smoothstep(0.0, 0.3, vUv.x) * smoothstep(1.0, 0.6, vUv.x);
+      float a = rays * fall * 0.025 * uAlpha;
+      gl_FragColor = vec4(vec3(0.75, 0.82, 1.0) * a, a);
+    }`
+});
+const shafts = new THREE.Mesh(new THREE.PlaneGeometry(16, 14), shaftMat);
+shafts.position.set(-1, 2.5, -6); shafts.rotation.z = -0.5;
+shafts.frustumCulled = false; scene.add(shafts);
+
+// ---------- post ----------
+const rt = new THREE.WebGLRenderTarget(W, H, { type: THREE.HalfFloatType, samples: 4 });
+const composer = new EffectComposer(renderer, rt);
+composer.setPixelRatio(1); composer.setSize(W, H);
+composer.addPass(new RenderPass(scene, camera));
+const bloom = new UnrealBloomPass(new THREE.Vector2(W, H), 0.45, 0.6, 0.86);
+composer.addPass(bloom);
+composer.addPass(new OutputPass());
+const finish = new ShaderPass({
+  uniforms: { tDiffuse: { value: null }, uTime: { value: 0 }, uFade: { value: 1 } },
+  vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
+  fragmentShader: `uniform sampler2D tDiffuse; uniform float uTime, uFade; varying vec2 vUv;
+    float h(vec2 p){ return fract(sin(dot(p, vec2(12.9898,78.233))) * 43758.5453); }
+    void main(){
+      vec2 d = vUv - 0.5;
+      float ca = dot(d, d) * 0.006;
+      vec3 c = vec3(texture2D(tDiffuse, vUv + d * ca).r, texture2D(tDiffuse, vUv).g, texture2D(tDiffuse, vUv - d * ca).b);
+      float vig = smoothstep(1.05, 0.25, length(d * vec2(1.25, 1.0)));
+      c *= mix(0.55, 1.0, vig);
+      c += (h(vUv * 1000.0 + fract(uTime * 7.31)) - 0.5) * 0.028;
+      gl_FragColor = vec4(c * uFade, 1.0);
+    }`
+});
+composer.addPass(finish);
+
+// ---------- DOM ----------
+const $ = id => document.getElementById(id);
+const chars = [];
+[...document.querySelectorAll('#head .ln')].forEach((ln, li) => {
+  const txt = ln.textContent; ln.textContent = '';
+  [...txt].forEach(ch => { const e = document.createElement('span'); e.className = 'ch'; e.textContent = ch; ln.appendChild(e); chars.push({ el: e, i: chars.length, li }); });
+});
+const hud = [...document.querySelectorAll('.hud')].filter(e => e.id !== 'dot').map(e => ({ el: e, x: e.getBoundingClientRect().left / W }));
+
+function windIn(el, k, dist = 50) {
+  const e = eOutExpo(k);
+  el.style.opacity = clamp(k * 1.5);
+  el.style.transform = `translateX(${(1 - e) * -dist}px)`;
+  el.style.filter = `blur(${(1 - e) * 12}px)`;
+}
+function windOut(el, k, dist = 140) {
+  const e = eIn3(k);
+  el.style.opacity = 1 - clamp(k * 1.2);
+  el.style.transform = `translateX(${e * dist}px)`;
+  el.style.filter = `blur(${e * 14}px)`;
+}
+const mix3 = (a, b, k) => `rgb(${a.map((v, i) => Math.round(lerp(v, b[i], k))).join(',')})`;
+
+// Таймлайн: 0–3 видоискатель · 3–6 порыв ветра · 6–9 знак и текст · 9–19 удержание (бесшовный луп) · 19–23 уход
+const GUST = 3, HOLD = 9, OUT = 19;
+window.DURATION = 23;
+window.LOOP_RANGE = [HOLD, OUT];
+
+window.render = function (t) {
+  const out = prog(t, OUT, 3.4);
+  const ph = t / LOOP * TAU;
+
+  // камера: «с рук» в видоискателе → штатив после порыва
+  const k = eIO3(prog(t, GUST, 3.2)), hh = 1 - k;
+  const pos = new THREE.Vector3(.45 * hh + Math.sin(ph) * .16 * k + (Math.sin(t * 2.3) * .05 + Math.sin(t * 5.1) * .02) * hh,
+                                -.2 * hh + Math.sin(ph * 2) * .05 * k + (Math.sin(t * 3.1 + 1) * .04 + Math.sin(t * 6.7) * .015) * hh,
+                                lerp(8.2, 9.2, k) + Math.cos(ph) * .12 * k);
+  const look = new THREE.Vector3(lerp(1.1, .35, k) + Math.sin(ph) * .05 * k, lerp(.25, 0, k), 0);
+  camera.position.copy(pos); camera.lookAt(look);
+  camera.rotateZ(Math.sin(t * 1.7) * .008 * hh);
+  camera.position.z -= eIn3(out) * .8;
+  camera.updateMatrixWorld();
+
+  const r = ribbons[0];
+  const grow = eIO3(prog(t, GUST - .2, 2.7)), tail = eIO3(prog(t, OUT + .5, 2.8));
+  updateRibbon(r, t, Math.min(tail, grow - .001), Math.max(grow, .001));
+  r.silk.material.uniforms.uAlpha.value = clamp((t - GUST) / 2.5) * (1 - out);
+  setRing(eIO3(prog(t, 5.6, 1.5)) * (1 - eIO3(prog(t, OUT + .1, 1.4))));
+
+  bgMat.uniforms.uTime.value = t;
+  pMat.uniforms.uTime.value = t; pMat.uniforms.uAlpha.value = clamp(t / 1.2) * (1 - out * .7);
+  pMat.uniforms.uGust.value = eIO3(prog(t, GUST - .3, 2.6));       // +1 полный круг потока = рывок ветра
+  shaftMat.uniforms.uTime.value = t; shaftMat.uniforms.uAlpha.value = clamp((t - .3) / 2) * (1 - out);
+  finish.uniforms.uTime.value = t;
+  finish.uniforms.uFade.value = 1 - eIn3(prog(t, 21.6, 1.4));
+  composer.render();
+
+  $('veil').style.opacity = 1 - clamp(t / 0.7);
+
+  // видоискатель
+  const tt = Math.min(t, GUST + .12);
+  const p2 = n => String(n).padStart(2, '0');
+  $('tc').textContent = `00:00:${p2(Math.floor(tt))}:${p2(Math.floor(tt % 1 * 25))}`;
+  hud.forEach(h => {
+    h.el.style.opacity = 1; h.el.style.transform = ''; h.el.style.filter = '';
+    if (t > GUST) windOut(h.el, prog(t, GUST + .15 + h.x * 1.0 + (h.el.id === 'rec' ? .9 : 0), 1.1), 260);
+  });
+  const f = $('focus'), fk = eOutExpo(prog(t, 1.0, .6));
+  if (t <= GUST) { f.style.opacity = prog(t, 1.0, .25) * (.75 + .25 * Math.sin(t * 9)); f.style.transform = `scale(${lerp(1.5, 1, fk)})`; }
+  // точка REC: красная мигает → ветер гасит её в голубую → остаётся маркером строки
+  const d = $('dot'), dk = eIO3(prog(t, GUST + .1, .9));
+  const blink = t < GUST ? (t % 1 < .55 ? 1 : .25) : 1;
+  d.style.background = mix3([255, 59, 48], [143, 166, 255], dk);
+  d.style.boxShadow = `0 0 ${lerp(18, 26, dk)}px ${mix3([255, 59, 48], [110, 140, 255], dk)}`;
+  d.style.opacity = blink; d.style.transform = `scale(${1 + Math.sin(Math.PI * dk) * .7})`; d.style.filter = '';
+  if (t > OUT) windOut(d, prog(t, OUT, 1.8));
+
+  // типографика
+  const items = [['kicker', 6.2], ['rule', 7.6], ['body', 7.8], ['en', 8.05], ['sign', 8.3]];
+  items.forEach(([id, st], n) => {
+    const el = $(id);
+    windIn(el, prog(t, st, 1.2));
+    if (t > OUT) windOut(el, prog(t, OUT + n * .07, 1.8));
+  });
+  $('rule').style.transform += ` scaleX(${eOutExpo(prog(t, 7.6, 1.4))})`;
+  chars.forEach(c => {
+    const st = 6.6 + c.i * 0.04 + c.li * 0.1;
+    const kk = prog(t, st, 1.1), e = eOutExpo(kk);
+    let o = clamp(kk * 1.6), x = (1 - e) * -30, y = (1 - e) * 40, b = (1 - e) * 14;
+    if (t > OUT) { const q = eIn3(prog(t, OUT + .05 + c.i * .015, 1.6)); o *= 1 - q; x = q * 200; b += q * 16; }
+    c.el.style.opacity = o; c.el.style.transform = `translate(${x}px, ${y}px)`; c.el.style.filter = `blur(${b}px)`;
+  });
+  const sweep = prog(((t - HOLD) % LOOP + LOOP) % LOOP, 4, 1.8);
+  $('shine').style.backgroundPosition = `${lerp(100, -10, eIO3(sweep))}% 0`;
+  $('shine').style.opacity = (t >= HOLD && t < OUT && sweep > 0 && sweep < 1) ? 1 : 0;
+};
+
+window.render(location.hash ? parseFloat(location.hash.slice(1)) : 12);
+window.READY = true;
+</script>
+</body>
+</html>

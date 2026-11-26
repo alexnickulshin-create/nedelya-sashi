@@ -224,7 +224,7 @@ function updateRibbon(r, t, from, to) {
   for (let i = 0; i <= SEG; i++) {
     const s = i / SEG;
     // видимый отрезок: сжимаем точки вне [from, to] в концы — лента «растёт»
-    const sv = lerp(from, to, s);
+    const sv = clamp(lerp(from, to, s));
     const ii = Math.round(sv * SEG);
     curve.getPointAt(sv, P);
     const N = frames.normals[ii], B = frames.binormals[ii];
