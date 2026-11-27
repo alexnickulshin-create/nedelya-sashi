@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>QR · Снег</title>
+<style>
+  @font-face { font-family: Brand; font-weight: 400; src: local('Century Gothic'), local('CenturyGothic'), url(fonts/CenturyGothic.ttf), url(fonts/GOTHIC.TTF), url(fonts/URWGothic-Book.otf); }
+  @font-face { font-family: Brand; font-weight: 700; src: local('Century Gothic Bold'), local('CenturyGothic-Bold'), url(fonts/CenturyGothic-Bold.ttf), url(fonts/GOTHICB.TTF), url(fonts/URWGothic-Demi.otf); }
+  :root { --pearl: #f6f8ff; --ice: #b5c4ff; --mist: #d3dbf5; --dim: #9aa8d6; }
+  html, body { margin: 0; background: #050b22; }
+  #stage { position: relative; width: 1920px; height: 1080px; overflow: hidden; font-family: Brand, sans-serif; color: var(--pearl); background: #050b22; }
+  #gl, #htext { position: absolute; inset: 0; width: 1920px; height: 1080px; }
+  #card { position: absolute; inset: 0; width: 1920px; height: 1080px; filter: drop-shadow(0 30px 60px rgba(4,10,40,.55)); }
+  .l { position: absolute; left: 1012px; white-space: nowrap; will-change: transform, filter, opacity; }
+  #kicker { top: 222px; font-size: 22px; letter-spacing: .36em; color: var(--ice); text-transform: uppercase; }
+  #cta { top: 548px; font-size: 44px; font-weight: 700; }
+  #sub { top: 612px; font-size: 29px; color: var(--mist); }
+  #rule { top: 682px; width: 760px; height: 1px; background: linear-gradient(90deg, var(--ice), rgba(181,196,255,0)); transform-origin: left; }
+  #manual { top: 712px; font-size: 24px; color: var(--dim); }
+  #url { top: 746px; font-size: 62px; font-weight: 700; letter-spacing: -.01em; }
+  #pwl { top: 838px; font-size: 24px; color: var(--dim); }
+  #pw { top: 870px; font-size: 54px; font-weight: 700; letter-spacing: .04em; color: #a9bcff; text-shadow: 0 0 34px rgba(120,150,255,.45); }
+  #veil { position: absolute; inset: 0; background: #050b22; pointer-events: none; }
+</style>
+<script>window.READY = false;</script>
+<script type="importmap">
+{ "imports": { "three": "./node_modules/three/build/three.module.js", "three/addons/": "./node_modules/three/examples/jsm/" } }
+</script>
+</head>
+<body>
+<div id="stage">
+  <canvas id="gl" width="1920" height="1080"></canvas>
+  <canvas id="htext" width="1920" height="1080"></canvas>
+  <canvas id="card" width="1920" height="1080"></canvas>
+  <div class="l" id="kicker">Национальное собрание · 16.12</div>
+  <div class="l" id="cta">Наведите камеру на код</div>
+  <div class="l" id="sub">Программа дня и схема площадки</div>
+  <div class="l" id="rule"></div>
+  <div class="l" id="manual">Или откройте вручную</div>
+  <div class="l" id="url">nm26.pages.dev</div>
+  <div class="l" id="pwl">пароль</div>
+  <div class="l" id="pw">ПОПУТНЫЙ ВЕТЕР</div>
+  <div id="veil"></div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+const W = 1920, H = 1080, LOOP = 10;
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const prog = (t, s, d) => clamp((t - s) / d);
+const eOut3 = k => 1 - Math.pow(1 - clamp(k), 3);
+const eIO3 = k => { k = clamp(k); return k < .5 ? 4*k*k*k : 1 - Math.pow(-2*k + 2, 3) / 2; };
+const eOutExpo = k => { k = clamp(k); return k === 1 ? 1 : 1 - Math.pow(2, -10 * k); };
+const eIn3 = k => Math.pow(clamp(k), 3);
+const lerp = (a, b, k) => a + (b - a) * k;
+const $ = id => document.getElementById(id);
+
+// Таймлайн: 0–2.2 снегопад · 2.2–6.8 порыв собирает слова · 8–18 удержание (луп) · 18–22 слова срывает ветром
+// ?vo=1 — версия под озвучку: слова собираются позже, на фразе «фото- и видеосъёмка запрещена»
+const S = 0;
+// ?vo — версия под озвучку: строки появляются на своих фразах диктора
+const VO = new URLSearchParams(location.search).has('vo');
+const FORM = 1.6, FORM_SPAN = 2.8, HOLD = VO ? 18.5 : 8.5, OUT = VO ? 22.5 : 18.5, LEAVE = OUT + .2, LEAVE_SPAN = 1.6;
+window.DURATION = OUT + 4;
+window.LOOP_RANGE = [HOLD, OUT];
+
+await document.fonts.load('700 120px Brand', 'ВЕТРПМН');
+await document.fonts.ready;
+
+// ---------- заголовок и карточка с QR: чёткие подложки + точки-мишени для снега ----------
+const QR = ["111111100100011110001100010100110000101111111", "100000100001000101111100111100111001001000001", "101110100100000101000001000100011101001011101", "101110101010101011111000101001111101101011101", "101110100110100111101111100110110111101011101", "100000101011010101001000100100111000001000001", "111111101010101010101010101010101010101111111", "000000001011010110101000101011111100000000000", "011000100110101100011111100111001110001101000", "100111010000111110100010010100110101010000111", "000101111001110111100000001100000110100011011", "101100000001010111011010001111111101110101110", "010101111100101000000011110100110011001100110", "000010011110001111110110101110010011010001001", "110100100001101101100100101001010101000000101", "001111011111000011010001110010000011110001100", "000110111111011101111001110111001100011011111", "000101010101011011101011000011001000001110101", "010110100110000010011101001011111100010100101", "101100010011111110110101000100001100011010000", "100111111000000111011111101110111110111111010", "110010001110111001001000100100001100100010100", "100110101110000110111010101110101101101011111", "001010001110111001111000101101101001100011000", "010011111111011001001111111010101101111110011", "100111011001011100101011011010011010110010011", "101111110010010110011011011110000101110010101", "110110000011110110000111011010100011100101001", "010110101000100011111011010010011010110101011", "000011011001000010101111000110000111010100100", "001111100011011001001000011101011010111011011", "001111000110110110001000111010110000011101111", "111111100000100011011100100110110111111101010", "000111001001101100010110011101000000100101000", "000010100000100100011100000100101101001001101", "011110001100101001010011101111001110011100110", "100110101011000011001111111010111010111110101", "000000001011011101011000110011011010100010111", "111111100101100111101010101111001111101010101", "100000100000010101111000101110010111100010101", "101110100101001011011111110110111001111110000", "101110100001111011110001010011111000100111010", "101110101011000111111110111110101101111010011", "100000101110110100100001100001111101110001000", "111111100101110000111011111001001011100010101"];   // https://nm26.pages.dev/k/%D0%BF%D0%BE%D0%BF%D1%83%D1%82%D0%BD%D1%8B%D0%B9%D0%B2%D0%B5%D1%82%D0%B5%D1%80
+const hc = $('htext').getContext('2d');
+hc.font = '700 122px Brand'; hc.textAlign = 'left'; hc.textBaseline = 'alphabetic'; hc.letterSpacing = '1px';
+hc.fillStyle = '#f6f8ff'; hc.fillText('ВЕТЕР', 1006, 372);
+hc.fillStyle = '#a9bcff'; hc.fillText('ПЕРЕМЕН', 1006, 490);
+const CX = 120, CY = 170, CS = 740, MOD = 14, QS = QR.length * MOD, QX = CX + (CS - QS) / 2, QY = CY + (CS - QS) / 2;
+const cc = $('card').getContext('2d');
+cc.fillStyle = '#f6f8ff'; cc.beginPath(); cc.roundRect(CX, CY, CS, CS, 46); cc.fill();
+cc.fillStyle = '#14233c';
+QR.forEach((row, r) => { for (let c = 0; c < row.length; c++) if (row[c] === '1') cc.fillRect(QX + c * MOD, QY + r * MOD, MOD, MOD); });
+const img = hc.getImageData(0, 0, W, H).data, cimg = cc.getImageData(0, 0, W, H).data;
+const ink = [], cardInk = [];
+let minX = CX, maxX = 0;
+for (let y = 200; y < 540; y++) for (let x = 900; x < W; x++) if (img[(y * W + x) * 4 + 3] > 140) { ink.push(x, y); if (x > maxX) maxX = x; }
+for (let y = CY; y < CY + CS; y++) for (let x = CX; x < CX + CS; x++) { const k = (y * W + x) * 4; if (cimg[k + 3] > 200 && cimg[k] > 200) cardInk.push(x, y); }
+
+let sd = 1234567;
+const rnd = () => { sd = (sd * 1664525 + 1013904223) >>> 0; return sd / 4294967296; };
+
+const NT = 120000, NA = 4200, NL = 70, N = NT + NA + NL;
+const target = new Float32Array(N * 2), seed = new Float32Array(N * 4), kind = new Float32Array(N), pos = new Float32Array(N * 3);
+for (let i = 0; i < N; i++) {
+  seed.set([rnd(), rnd(), rnd(), rnd()], i * 4);
+  if (i < NT) {
+    const src = i % 2 ? cardInk : ink;          // половина снега строит карточку, половина — заголовок
+    const j = Math.floor(rnd() * src.length / 2) * 2;
+    target[i * 2] = src[j] + rnd() - .5; target[i * 2 + 1] = src[j + 1] + rnd() - .5;
+    if (i % 2) kind[i] = 0.25;
+  } else kind[i] = i < NT + NA ? 1 : 2;
+}
+const geo = new THREE.BufferGeometry();
+geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+geo.setAttribute('target', new THREE.BufferAttribute(target, 2));
+geo.setAttribute('seed', new THREE.BufferAttribute(seed, 4));
+geo.setAttribute('kind', new THREE.BufferAttribute(kind, 1));
+
+// ---------- renderer ----------
+const renderer = new THREE.WebGLRenderer({ canvas: $('gl'), antialias: false, preserveDrawingBuffer: true });
+renderer.setPixelRatio(1); renderer.setSize(W, H, false);
+renderer.toneMapping = THREE.NoToneMapping;
+const scene = new THREE.Scene();
+const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+
+// небо: синий час, дымка у горизонта, медленные полосы тумана
+const bgMat = new THREE.ShaderMaterial({
+  depthWrite: false, depthTest: false,
+  uniforms: { uTime: { value: 0 } },
+  vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`,
+  fragmentShader: `varying vec2 vUv; uniform float uTime;
+    void main(){
+      float ph = uTime * 6.2831853 / 10.0;
+      float y = vUv.y;
+      vec3 top = vec3(0.0015, 0.003, 0.016), mid = vec3(0.004, 0.010, 0.060), low = vec3(0.016, 0.034, 0.170);
+      vec3 c = mix(low, mid, smoothstep(0.0, 0.42, y)); c = mix(c, top, smoothstep(0.35, 1.0, y));
+      float fog = 0.5 + 0.5 * sin(vUv.x * 5.0 + ph + sin(vUv.x * 2.3 - ph) * 1.5);
+      c += vec3(0.012, 0.020, 0.075) * fog * smoothstep(0.40, 0.0, y) * 0.6;
+      c += vec3(0.006, 0.014, 0.060) * exp(-pow(distance(vUv * vec2(1.78, 1.0), vec2(0.89, 0.56)), 2.0) * 3.0);   // свет за заголовком
+      gl_FragColor = vec4(c, 1.0);
+    }`
+});
+const bg = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), bgMat); bg.frustumCulled = false; bg.renderOrder = -1; scene.add(bg);
+
+const pMat = new THREE.ShaderMaterial({
+  transparent: true, depthWrite: false, depthTest: false, blending: THREE.AdditiveBlending,
+  uniforms: { uTime: { value: 0 }, uGust: { value: 0 }, uX0: { value: minX }, uX1: { value: maxX }, uAmb: { value: 1 }, uCard: { value: 1 } },
+  vertexShader: `
+    attribute vec2 target; attribute vec4 seed; attribute float kind;
+    uniform float uTime, uGust, uX0, uX1, uAmb, uCard;
+    varying float vA; varying float vBokeh; varying vec3 vC;
+    const float W = 1920.0, H = 1080.0, PI = 3.14159265, TAU = 6.2831853;
+    void main(){
+      float ph = uTime * TAU / 10.0;
+      vec2 p; float size; float a; float bokeh = 0.0; vec3 col = vec3(0.86, 0.90, 1.0);
+      if (kind < 0.5) {
+        // --- снежинка, которая станет буквой ---
+        float tx = (target.x - uX0) / (uX1 - uX0);
+        float fk = clamp((uTime - (${FORM.toFixed(2)} + tx * ${FORM_SPAN.toFixed(2)} + seed.y * 0.9)) / 1.5, 0.0, 1.0);
+        float e = 1.0 - pow(1.0 - fk, 3.0);
+        float far = 1.0 - e;
+        vec2 from = target + vec2(-(380.0 + 1100.0 * seed.z), (seed.x - 0.5) * 420.0 - 60.0);
+        p = mix(from, target, e);
+        p.y += sin(p.x * 0.005 + seed.x * 6.0 + ph) * 70.0 * far + sin(p.x * 0.013 + seed.y * 9.0) * 26.0 * far;   // линии тока ветра
+        size = mix(1.4, 2.1, seed.w);
+        a = smoothstep(0.0, 0.12, fk) * mix(0.30, 0.50, e) * (0.65 + 0.35 * sin(ph * (2.0 + floor(seed.x * 4.0)) + seed.y * 60.0));
+        // позёмка с кромок букв (цикл 5 с → луп бесшовный)
+        if (seed.w > 0.66 && kind < 0.1) {
+          float gate = smoothstep(${(6.8 + S).toFixed(2)}, ${(8 + S).toFixed(2)}, uTime);
+          float c = fract(uTime / 5.0 + seed.x);
+          float s = max(0.0, (c - 0.45) / 0.55) * gate;
+          p += vec2(pow(s, 1.5) * 520.0 * (0.5 + seed.y), -sin(s * PI) * 46.0 * (seed.z - 0.2) + s * s * 90.0 * (seed.z - 0.5));
+          p += vec2(sin(ph * 4.0 + seed.z * 30.0), cos(ph * 5.0 + seed.y * 30.0)) * 16.0 * s;
+          a *= pow(1.0 - s, 1.3) * mix(1.0, smoothstep(0.0, 0.07, c), gate) * (1.0 + 1.2 * step(0.001, s));
+        }
+        // финал: слова срывает слева направо
+        float lk = clamp((uTime - (${LEAVE.toFixed(2)} + tx * ${LEAVE_SPAN.toFixed(2)} + seed.y * 0.5)) / 1.9, 0.0, 1.0);
+        p += vec2(lk * lk * 1700.0 * (0.5 + seed.z), -lk * 150.0 * (seed.x - 0.5) - lk * lk * 260.0 * (seed.w - 0.4));
+        p += vec2(0.0, sin(lk * 9.0 + seed.x * 20.0)) * 26.0 * lk;
+        a *= 1.0 - lk;
+        if (kind > 0.1) a *= uCard;   // на готовой карточке снег гаснет, чтобы код читался чисто
+      } else if (kind < 1.5) {
+        // --- снегопад в три слоя глубины ---
+        float dp = seed.z;
+        float lapsX = 1.0 + floor(dp * 2.6 + seed.w * 1.2);
+        float lapsY = 1.0 + floor(dp * 1.9);
+        float kx = fract(seed.x + (uTime / 10.0 + uGust) * lapsX);
+        float ky = fract(seed.y + uTime / 10.0 * lapsY);
+        p = vec2(mix(-180.0, W + 180.0, kx), mix(-120.0, H + 120.0, ky));
+        p += vec2(sin(ph * 2.0 + seed.w * 40.0), cos(ph * 3.0 + seed.x * 30.0)) * mix(6.0, 34.0, dp);
+        float edge = sin(PI * kx) * sin(PI * ky);
+        if (dp < 0.80) { size = mix(1.2, 2.8, dp / 0.80); a = mix(0.22, 0.55, dp / 0.80); }
+        else if (dp < 0.985) { size = mix(3.5, 8.0, (dp - 0.80) / 0.185); a = 0.16; }
+        else { size = mix(40.0, 110.0, (dp - 0.985) / 0.015); a = 0.035; }
+        a *= smoothstep(0.0, 0.25, edge) * uAmb;
+      } else {
+        // --- огни города в расфокусе ---
+        p = vec2(seed.x * W + sin(ph + seed.w * 6.0) * 9.0, H - 6.0 - seed.y * seed.y * 95.0);
+        size = mix(26.0, 70.0, seed.z); bokeh = 0.3;
+        a = (0.03 + 0.07 * seed.w) * (0.65 + 0.35 * sin(ph * (1.0 + floor(seed.z * 3.0)) + seed.x * 50.0)) * uAmb;
+        col = seed.w > 0.45 ? vec3(1.0, 0.80, 0.58) : vec3(0.75, 0.83, 1.0);
+      }
+      vA = a; vBokeh = bokeh; vC = col;
+      gl_PointSize = size;
+      gl_Position = vec4(p.x / W * 2.0 - 1.0, 1.0 - p.y / H * 2.0, 0.0, 1.0);
+    }`,
+  fragmentShader: `varying float vA; varying float vBokeh; varying vec3 vC;
+    void main(){
+      float r = length(gl_PointCoord - 0.5);
+      float soft = smoothstep(0.5, 0.05, r);
+      float disc = smoothstep(0.5, 0.44, r) * (0.62 + 0.38 * smoothstep(0.30, 0.48, r));
+      float m = mix(soft, disc, vBokeh);
+      gl_FragColor = vec4(vC * m * vA, 1.0);
+    }`
+});
+const points = new THREE.Points(geo, pMat); points.frustumCulled = false; scene.add(points);
+
+const composer = new EffectComposer(renderer, new THREE.WebGLRenderTarget(W, H, { type: THREE.HalfFloatType }));
+composer.setPixelRatio(1); composer.setSize(W, H);
+composer.addPass(new RenderPass(scene, camera));
+composer.addPass(new UnrealBloomPass(new THREE.Vector2(W, H), 0.28, 0.55, 0.72));
+composer.addPass(new OutputPass());
+const finish = new ShaderPass({
+  uniforms: { tDiffuse: { value: null }, uTime: { value: 0 }, uFade: { value: 1 } },
+  vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
+  fragmentShader: `uniform sampler2D tDiffuse; uniform float uTime, uFade; varying vec2 vUv;
+    float h(vec2 p){ return fract(sin(dot(p, vec2(12.9898,78.233))) * 43758.5453); }
+    void main(){
+      vec2 d = vUv - 0.5;
+      vec3 c = texture2D(tDiffuse, vUv).rgb;
+      c *= mix(0.60, 1.0, smoothstep(1.05, 0.25, length(d * vec2(1.2, 1.0))));
+      c += (h(vUv * 1000.0 + fract(uTime * 7.31)) - 0.5) * 0.022;
+      gl_FragColor = vec4(c * uFade, 1.0);
+    }`
+});
+composer.addPass(finish);
+
+function windIn(el, k, dist = 40) {
+  const e = eOutExpo(k);
+  el.style.opacity = clamp(k * 1.5);
+  el.style.transform = `translateX(${(1 - e) * -dist}px)`;
+  el.style.filter = `blur(${(1 - e) * 10}px)`;
+}
+function windOut(el, k, dist = 160) {
+  const e = eIn3(k);
+  el.style.opacity = 1 - clamp(k * 1.2);
+  el.style.transform = `translateX(${e * dist}px)`;
+  el.style.filter = `blur(${e * 14}px)`;
+}
+
+const ht = $('htext');
+window.render = function (t) {
+  bgMat.uniforms.uTime.value = t;
+  pMat.uniforms.uTime.value = t;
+  pMat.uniforms.uGust.value = eIO3(prog(t, 1.9 + S, 3.0)) + eIO3(prog(t, OUT, 3.2));   // целое число кругов → удержание не сбивается
+  pMat.uniforms.uAmb.value = clamp(t / 1.0);
+  finish.uniforms.uTime.value = t;
+  finish.uniforms.uFade.value = 1 - eIn3(prog(t, OUT + 2.9, 1.1));
+  composer.render();
+
+  $('veil').style.opacity = 1 - clamp(t / 0.8);
+
+  // чёткая подложка заголовка: проявляется вслед за снегом слева направо и так же уходит
+  const x0 = minX / W * 100, x1 = maxX / W * 100;
+  const rev = lerp(x0 - 6, x1 + 6, prog(t, FORM + 1.5, FORM_SPAN + .9));
+  const era = lerp(x0 - 6, x1 + 6, prog(t, LEAVE + .1, LEAVE_SPAN + .5));
+  const m = t < OUT ? `linear-gradient(90deg, #000 ${rev - 6}%, transparent ${rev}%)`
+                    : `linear-gradient(90deg, transparent ${era}%, #000 ${era + 5}%)`;
+  ht.style.webkitMaskImage = m; ht.style.maskImage = m; ht.style.opacity = .8;
+  const cd = $('card'); cd.style.webkitMaskImage = m; cd.style.maskImage = m;
+  pMat.uniforms.uCard.value = 1 - eIO3(prog(t, FORM + 3.4, 1.2)) + eIO3(prog(t, OUT, .4));
+
+  const items = VO ? [['kicker', 1.0], ['sub', 6.9], ['cta', 10.5], ['rule', 12.7], ['manual', 13.0], ['url', 13.4], ['pwl', 16.6], ['pw', 16.9]]
+                   : [['kicker', 1.0], ['cta', 5.6], ['sub', 5.85], ['rule', 6.2], ['manual', 6.4], ['url', 6.6], ['pwl', 6.9], ['pw', 7.1]];
+  items.forEach(([id, st], n) => {
+    const el = $(id);
+    windIn(el, prog(t, st, 1.1));
+    if (t > OUT) windOut(el, prog(t, OUT + .2 + n * .08, 1.7));
+  });
+};
+
+window.render(location.hash ? parseFloat(location.hash.slice(1)) : 12);
+window.READY = true;
+</script>
+</body>
+</html>
