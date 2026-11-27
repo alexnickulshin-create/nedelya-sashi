@@ -66,8 +66,8 @@ const $ = id => document.getElementById(id);
 // Таймлайн: 0–2.2 снегопад · 2.2–6.8 порыв собирает слова · 8–18 удержание (луп) · 18–22 слова срывает ветром
 // ?vo=1 — версия под озвучку: слова собираются позже, на фразе «фото- и видеосъёмка запрещена»
 const VO = new URLSearchParams(location.search).has('vo');
-const S = VO ? 6.6 : 0;
-const FORM = 2.4 + S, FORM_SPAN = 2.0, HOLD = 8 + S, OUT = VO ? 19.5 : 18, LEAVE = OUT + .2, LEAVE_SPAN = 1.4;
+const S = VO ? (parseFloat(new URLSearchParams(location.search).get('vo')) > 1 ? parseFloat(new URLSearchParams(location.search).get('vo')) : 6.6) : 0;
+const FORM = 2.4 + S, FORM_SPAN = 2.0, HOLD = 8 + S, OUT = VO ? S + 12.6 : 18, LEAVE = OUT + .2, LEAVE_SPAN = 1.4;
 window.DURATION = OUT + 4;
 window.LOOP_RANGE = [HOLD, OUT];
 
