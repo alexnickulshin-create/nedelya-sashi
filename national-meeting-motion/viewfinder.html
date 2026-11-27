@@ -22,7 +22,7 @@
   .grid { background: rgba(244,246,252,.13); }
   #g1 { left: 640px; top: 70px; width: 1px; height: 940px; } #g2 { left: 1280px; top: 70px; width: 1px; height: 940px; }
   #g3 { left: 70px; top: 360px; width: 1780px; height: 1px; } #g4 { left: 70px; top: 720px; width: 1780px; height: 1px; }
-  #focus { left: 890px; top: 470px; width: 140px; height: 140px; border: 2px solid var(--pearl); box-sizing: border-box; }
+  #focus { left: 1392px; top: 448px; width: 140px; height: 140px; border: 2px solid var(--pearl); box-sizing: border-box; }
   #focus::before, #focus::after { content: ''; position: absolute; background: var(--pearl); }
   #focus::before { left: 50%; top: -1px; width: 2px; height: 14px; } #focus::after { left: 50%; bottom: -1px; width: 2px; height: 14px; }
   #rec { left: 190px; top: 163px; font-size: 26px; letter-spacing: .16em; font-weight: 700; display: flex; gap: 22px; }
@@ -89,6 +89,7 @@ import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { BokehPass } from 'three/addons/postprocessing/BokehPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
@@ -187,13 +188,13 @@ function makeRibbon(o) {
 const ribbons = [
   makeRibbon({ pts: [[-1,-8,-4.5],[1.6,-4.6,-3.8],[3.2,-1.8,-3],[5,.7,-3.2],[6.6,3,-4],[10.5,5,-6]], width: .28, amp: .3, twist: .9, phase: 1.0, seed: 4.1, start: .5, face: '#5f7cf0', back: '#c9d5fa' }),
   makeRibbon({ pts: [[-8,-5,1.4],[-1,-4.1,1],[2.7,-2.5,1.3],[4.15,-.4,.9],[4.9,1.6,.2],[7,3.1,-1],[11,3.5,-2.2]], width: .3, amp: .3, twist: 1.2, phase: 2.4, seed: 2.2, start: .25, face: '#e9edfb', back: '#8ea6f5' }),
-  makeRibbon({ pts: [[-8,-3.6,3.4],[-2,-3.5,2.2],[1.5,-2.0,.8],[2.95,.15,0],[4.2,2.0,-.6],[6.6,3.5,-1.6],[10.5,4.3,-3]], width: .46, amp: .34, twist: 1.0, phase: -.5, seed: .3, start: 0, face: '#2749ee', back: '#e4e9fa' }),
+  makeRibbon({ pts: [[-8,-3.6,3.4],[-2,-3.5,2.2],[1.5,-2.0,.8],[2.95,.15,0],[4.2,2.0,-.6],[6.6,3.5,-1.6],[10.5,4.3,-3]], width: .46, amp: .34, twist: 1.0, phase: -.5, seed: .3, start: 0, hero: true, face: '#2749ee', back: '#e4e9fa' }),
   makeRibbon({ pts: [[-6,-5.2,4],[1,-3.8,3.6],[3.9,-2.5,3],[5.5,-1.0,2.2],[8.5,.1,1]], width: .15, amp: .2, twist: 1.5, phase: .8, seed: 5.5, start: .6, face: '#3152ee', back: '#dfe6fb' }),
 ];
 
 const tmpV = new THREE.Vector3();
 const VIEW = new THREE.Vector3(0, 0, 1);
-function updateRibbon(r, t, from, to) {
+function updateRibbon(r, t, from, to, wind = 1) {
   const tl = t / LOOP;                       // все частоты кратны циклу → бесшовный луп
   const pos = r.g.attributes.position.array;
   const P = new THREE.Vector3(), T = new THREE.Vector3(), N0 = new THREE.Vector3(), B0 = new THREE.Vector3(), Np = new THREE.Vector3(), Bp = new THREE.Vector3();
@@ -210,7 +211,7 @@ function updateRibbon(r, t, from, to) {
     const q = i / SEG;   // заострённые концы у растущей и уходящей ленты
     const tip = Math.pow(clamp(to < .999 ? (1 - q) / .07 : 1) * clamp(from > .001 ? q / .07 : 1), .6);
     const w = r.width * taper * tip * (.82 + .18 * Math.sin(TAU * (2.1 * sv - tl) + r.seed * 3));
-    const A = r.amp * (.3 + .7 * sv);        // к свободному концу полощется сильнее
+    const A = r.amp * wind * (.3 + .7 * sv);        // к свободному концу полощется сильнее
     // общий снос осевой линии крупной волной
     P.addScaledVector(B0, Math.sin(TAU * (1.6 * sv - 2 * tl) + r.seed) * A * .9)
      .addScaledVector(N0, Math.sin(TAU * (1.1 * sv - tl) + r.seed * 2) * A * .5);
@@ -294,6 +295,16 @@ const rt = new THREE.WebGLRenderTarget(W, H, { type: THREE.HalfFloatType, sample
 const composer = new EffectComposer(renderer, rt);
 composer.setPixelRatio(1); composer.setSize(W, H);
 composer.addPass(new RenderPass(scene, camera));
+// глубина резкости: макро-план и перевод фокуса
+const bokeh = new BokehPass(scene, camera, { focus: 9.2, aperture: .001, maxblur: .012 });
+const bokehRender = bokeh.render.bind(bokeh);
+bokeh.render = (...a) => {   // фон, частицы и лучи не пишут глубину
+  const hid = [bg, points, shafts]; hid.forEach(o => o.visible = false);
+  const cc = new THREE.Color(); renderer.getClearColor(cc);
+  bokehRender(...a);
+  hid.forEach(o => o.visible = true); renderer.setClearColor(cc, 1);
+};
+composer.addPass(bokeh);
 const bloom = new UnrealBloomPass(new THREE.Vector2(W, H), 0.45, 0.6, 0.86);
 composer.addPass(bloom);
 composer.addPass(new OutputPass());
@@ -337,34 +348,54 @@ function windOut(el, k, dist = 140) {
 }
 const mix3 = (a, b, k) => `rgb(${a.map((v, i) => Math.round(lerp(v, b[i], k))).join(',')})`;
 
-// Таймлайн: 0–3 видоискатель · 3–6 порыв ветра · 6–9 знак и текст · 9–19 удержание (бесшовный луп) · 19–23 уход
-const GUST = 3, HOLD = 9, OUT = 19;
+// РАСКАДРОВКА (жанровая грамматика — beauty: макро фактуры, малая ГРИП, мягкий ключ с контровым краем)
+// S1 0.0–3.5  POV телефона: камера «с рук», глубокая резкость, фокус-рамка на спокойной ленте. Порыв на 2.6 сдувает интерфейс.
+// S2 3.5–5.6  Склейка на порыве → макро шёлка: проезд вдоль ленты, замедление ×0.4, малая ГРИП.
+// S3 5.6–8.8  Тот же кадр продолжается: отъезд с дугой, перевод фокуса на общий план, появляется текст.
+// S4 9–19     Удержание: микродрейф слайдера (бесшовный луп).   S5 19–23 уход.
+const GUST = 2.6, CUT = 3.5, PULL = 5.6, HOLD = 9, OUT = 19;
 window.DURATION = 23;
 window.LOOP_RANGE = [HOLD, OUT];
+const V = (x, y, z) => new THREE.Vector3(x, y, z);
+// время ткани: в макро-плане замедлено, в удержании равно t (периодичность сохраняется)
+const SLOW_END = 6.2, SLOW = .4;
+const clothTime = t => t >= SLOW_END ? t : t >= CUT ? SLOW_END - (SLOW_END - t) * SLOW : t + (SLOW_END - (SLOW_END - CUT) * SLOW - CUT);
+
+function shotCamera(t) {
+  const ph = t / LOOP * TAU;
+  const hold = { pos: V(Math.sin(ph) * .16, Math.sin(ph * 2) * .05, 9.2 + Math.cos(ph) * .12), look: V(.35 + Math.sin(ph) * .05, 0, 0) };
+  if (t < CUT) {       // S1: телефон в руке
+    const hx = Math.sin(t * 2.3) * .05 + Math.sin(t * 5.1) * .02, hy = Math.sin(t * 3.1 + 1) * .04 + Math.sin(t * 6.7) * .015;
+    return { pos: V(.1 + hx, -.05 + hy, 9.0), look: V(.5, 0, 0), roll: Math.sin(t * 1.7) * .008, focus: 9.2, aperture: .0002 };
+  }
+  const u = prog(t, CUT, PULL - CUT);                    // S2: проезд вдоль ленты
+  const mPos = V(1.75 + .35 * u, -1.0 + .3 * u, 2.5), mLook = V(3.25 + .2 * u, .7 + .15 * u, -.15);
+  const k = eIO3(prog(t, PULL, 3.2));                    // S3: отъезд с дугой
+  const pos = mPos.lerp(hold.pos, k), look = mLook.lerp(hold.look, k);
+  pos.x -= Math.sin(Math.PI * k) * 1.3; pos.y += Math.sin(Math.PI * k) * .35;
+  const fk = eIO3(prog(t, PULL, 2.4));
+  const o = eIn3(prog(t, OUT, 3.4));                     // S5: лёгкий наезд
+  pos.lerp(V(1.0, -.1, 7.2), o * .7);
+  return { pos, look, roll: lerp(-.1, 0, k), focus: lerp(3.35, 9.3, fk), aperture: lerp(.0055, .0011, fk) };
+}
 
 window.render = function (t) {
   const out = prog(t, OUT, 3.4);
-  const ph = t / LOOP * TAU;
+  const c = shotCamera(t);
+  camera.position.copy(c.pos); camera.lookAt(c.look); camera.rotateZ(c.roll); camera.updateMatrixWorld();
+  bokeh.uniforms.focus.value = c.focus; bokeh.uniforms.aperture.value = c.aperture;
 
-  // камера: «с рук» в видоискателе → штатив после порыва
-  const k = eIO3(prog(t, GUST, 3.2)), hh = 1 - k;
-  const pos = new THREE.Vector3(.45 * hh + Math.sin(ph) * .16 * k + (Math.sin(t * 2.3) * .05 + Math.sin(t * 5.1) * .02) * hh,
-                                -.2 * hh + Math.sin(ph * 2) * .05 * k + (Math.sin(t * 3.1 + 1) * .04 + Math.sin(t * 6.7) * .015) * hh,
-                                lerp(8.2, 9.2, k) + Math.cos(ph) * .12 * k);
-  const look = new THREE.Vector3(lerp(1.1, .35, k) + Math.sin(ph) * .05 * k, lerp(.25, 0, k), 0);
-  camera.position.copy(pos); camera.lookAt(look);
-  camera.rotateZ(Math.sin(t * 1.7) * .008 * hh);
-  camera.position.z -= eIn3(out) * .8;
-  camera.updateMatrixWorld();
-
+  // ветер: штиль в видоискателе → порыв → рабочий ветер
+  const wind = lerp(lerp(.16, 1.5, eIO3(prog(t, GUST, .9))), 1, eIO3(prog(t, PULL, 2.6))) + eIn3(out) * .4;
+  const tc = clothTime(t);
   ribbons.forEach(r => {
-    const grow = eIO3(prog(t, GUST - .2 + r.start, 3.0)), tail = eIO3(prog(t, OUT + .3 + r.start * .6, 2.8));
-    updateRibbon(r, t, Math.min(tail, grow - .001), Math.max(grow, .001));
+    const grow = r.hero ? 1 : eOut3(prog(t, GUST + .3 + r.start, 3.2)), tail = eIO3(prog(t, OUT + .3 + r.start * .6, 2.8));
+    updateRibbon(r, tc, Math.min(tail, grow - .001), Math.max(grow, .001), wind);
   });
 
   bgMat.uniforms.uTime.value = t;
   pMat.uniforms.uTime.value = t; pMat.uniforms.uAlpha.value = clamp(t / 1.2) * (1 - out * .7);
-  pMat.uniforms.uGust.value = eIO3(prog(t, GUST - .3, 2.6));       // +1 полный круг потока = рывок ветра
+  pMat.uniforms.uGust.value = eIO3(prog(t, GUST - .1, 2.6));       // +1 полный круг потока = рывок ветра
   shaftMat.uniforms.uTime.value = t; shaftMat.uniforms.uAlpha.value = clamp((t - .3) / 2) * (1 - out);
   finish.uniforms.uTime.value = t;
   finish.uniforms.uFade.value = 1 - eIn3(prog(t, 21.6, 1.4));
@@ -373,37 +404,38 @@ window.render = function (t) {
   $('veil').style.opacity = 1 - clamp(t / 0.7);
 
   // видоискатель
-  const tt = Math.min(t, GUST + .12);
+  const tt = Math.min(t, GUST + .15);
   const p2 = n => String(n).padStart(2, '0');
   $('tc').textContent = `00:00:${p2(Math.floor(tt))}:${p2(Math.floor(tt % 1 * 25))}`;
   hud.forEach(h => {
     h.el.style.opacity = 1; h.el.style.transform = ''; h.el.style.filter = '';
-    if (t > GUST) windOut(h.el, prog(t, GUST + .15 + h.x * 1.0 + (h.el.id === 'rec' ? .9 : 0), 1.1), 260);
+    if (t > GUST) windOut(h.el, prog(t, GUST + .08 + h.x * .35, .5), 320);
+    if (t >= CUT) h.el.style.opacity = 0;
   });
-  const f = $('focus'), fk = eOutExpo(prog(t, 1.0, .6));
-  if (t <= GUST) { f.style.opacity = prog(t, 1.0, .25) * (.75 + .25 * Math.sin(t * 9)); f.style.transform = `scale(${lerp(1.5, 1, fk)})`; }
-  // точка REC: красная мигает → ветер гасит её в голубую → остаётся маркером строки
-  const d = $('dot'), dk = eIO3(prog(t, GUST + .1, .9));
+  const f = $('focus'), fk = eOutExpo(prog(t, .9, .6));
+  if (t <= GUST) { f.style.opacity = prog(t, .9, .25) * (.75 + .25 * Math.sin(t * 9)); f.style.transform = `scale(${lerp(1.5, 1, fk)})`; }
+  // точка REC: красная мигает → ветер гасит её в голубую → возвращается маркером строки
+  const d = $('dot'), dk = eIO3(prog(t, GUST + .1, .6));
   const blink = t < GUST ? (t % 1 < .55 ? 1 : .25) : 1;
   d.style.background = mix3([255, 59, 48], [143, 166, 255], dk);
   d.style.boxShadow = `0 0 ${lerp(18, 26, dk)}px ${mix3([255, 59, 48], [110, 140, 255], dk)}`;
-  d.style.opacity = blink; d.style.transform = `scale(${1 + Math.sin(Math.PI * dk) * .7})`; d.style.filter = '';
+  d.style.opacity = blink * (t < CUT ? 1 : eOut3(prog(t, 6.4, .6))); d.style.transform = `scale(${1 + Math.sin(Math.PI * dk) * .7})`; d.style.filter = '';
   if (t > OUT) windOut(d, prog(t, OUT, 1.8));
 
   // типографика
-  const items = [['kicker', 6.2], ['rule', 7.6], ['body', 7.8], ['en', 8.05], ['sign', 8.3]];
+  const items = [['kicker', 6.5], ['rule', 7.4], ['body', 7.5], ['en', 7.65], ['sign', 7.8]];
   items.forEach(([id, st], n) => {
     const el = $(id);
     windIn(el, prog(t, st, 1.2));
     if (t > OUT) windOut(el, prog(t, OUT + n * .07, 1.8));
   });
-  $('rule').style.transform += ` scaleX(${eOutExpo(prog(t, 7.6, 1.4))})`;
-  chars.forEach(c => {
-    const st = 6.6 + c.i * 0.04 + c.li * 0.1;
+  $('rule').style.transform += ` scaleX(${eOutExpo(prog(t, 7.4, 1.4))})`;
+  chars.forEach(ch => {
+    const st = 6.8 + ch.i * 0.04 + ch.li * 0.1;
     const kk = prog(t, st, 1.1), e = eOutExpo(kk);
     let o = clamp(kk * 1.6), x = (1 - e) * -30, y = (1 - e) * 40, b = (1 - e) * 14;
-    if (t > OUT) { const q = eIn3(prog(t, OUT + .05 + c.i * .015, 1.6)); o *= 1 - q; x = q * 200; b += q * 16; }
-    c.el.style.opacity = o; c.el.style.transform = `translate(${x}px, ${y}px)`; c.el.style.filter = `blur(${b}px)`;
+    if (t > OUT) { const q = eIn3(prog(t, OUT + .05 + ch.i * .015, 1.6)); o *= 1 - q; x = q * 200; b += q * 16; }
+    ch.el.style.opacity = o; ch.el.style.transform = `translate(${x}px, ${y}px)`; ch.el.style.filter = `blur(${b}px)`;
   });
   const sweep = prog(((t - HOLD) % LOOP + LOOP) % LOOP, 4, 1.8);
   $('shine').style.backgroundPosition = `${lerp(100, -10, eIO3(sweep))}% 0`;
