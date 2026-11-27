@@ -36,12 +36,6 @@
   <div class="c" id="rule"></div>
   <div class="c" id="body">Всё, что прозвучит в этом зале, остаётся в этом зале.</div>
   <div class="c" id="en">No photo or video recording</div>
-  <div class="c" id="sign">
-    <div class="w">Ветер перемен</div>
-    <div class="bar"></div>
-    <img id="logo" src="logo/ldb-logo.png" alt="L'Oréal Dermatological Beauty" onerror="this.remove();document.getElementById('ldbtxt').style.display='block'">
-    <div class="ldb" id="ldbtxt" style="display:none"><b>L'ORÉAL</b>DERMATOLOGICAL BEAUTY</div>
-  </div>
   <div id="veil"></div>
 </div>
 
@@ -268,7 +262,7 @@ window.render = function (t) {
   ht.style.webkitMaskImage = m; ht.style.maskImage = m;
   ht.style.opacity = .78;
 
-  const items = [['kicker', 1.0], ['rule', 6.3 + S], ['body', 6.5 + S], ['en', 6.7 + S], ['sign', 6.9 + S]];
+  const items = [['kicker', 1.0], ['rule', 6.3 + S], ['body', 6.5 + S], ['en', 6.7 + S]];
   items.forEach(([id, st], n) => {
     const el = $(id);
     windIn(el, prog(t, st, 1.1));
