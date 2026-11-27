@@ -151,13 +151,19 @@ bg.frustumCulled = false; bg.renderOrder = -10;
 scene.add(bg);
 
 // ---------- light ----------
-const key = new THREE.DirectionalLight(0xfff3e6, 1.6); key.position.set(-4, 6, 6); scene.add(key);
+const key = new THREE.DirectionalLight(0xfff3e6, 2.6); key.position.set(-4, 6, 6); scene.add(key);
 const rim = new THREE.DirectionalLight(0x6f8cff, 2.6); rim.position.set(6, 2, -6); scene.add(rim);
-const fill = new THREE.PointLight(0x9fb4ff, 5, 20, 2); fill.position.set(3.5, -1, 4); scene.add(fill);
+const fill = new THREE.PointLight(0xbfcbff, 22, 20, 2); fill.position.set(1.5, .5, 4.5); scene.add(fill);
 scene.add(new THREE.AmbientLight(0x1a2a6a, 0.25));
 
-// ---------- объёмные ленты ----------
-const SEG = 300, PROF = 20;
+// ---------- шёлковые ленты на ветру ----------
+// Тонкая двусторонняя ткань: лицо — кобальт, изнанка — жемчуг. По ленте бегут волны ветра,
+// фаза волны меняется поперёк ширины — кромки полощутся, как у настоящей ткани.
+const SEG = 320, PROF = 12;
+const satin = (color, extra = {}) => new THREE.MeshPhysicalMaterial({
+  color, metalness: 0.1, roughness: 0.24, clearcoat: 0.6, clearcoatRoughness: 0.15,
+  sheen: 1, sheenColor: new THREE.Color('#aebcff'), sheenRoughness: 0.3, ...extra });
+
 function makeRibbon(o) {
   const g = new THREE.BufferGeometry();
   const n = (SEG + 1) * (PROF + 1);
@@ -169,132 +175,59 @@ function makeRibbon(o) {
     idx.push(a, b, a + 1, b, b + 1, a + 1);
   }
   g.setIndex(idx);
-  const mesh = new THREE.Mesh(g, o.material);
-  mesh.frustumCulled = false;
-  scene.add(mesh);
-  let silk = null;
-  if (o.silk) {
-    const sg = new THREE.BufferGeometry();
-    const sn = (SEG + 1) * 2;
-    sg.setAttribute('position', new THREE.BufferAttribute(new Float32Array(sn * 3), 3));
-    const uv = new Float32Array(sn * 2);
-    for (let i = 0; i <= SEG; i++) { uv.set([i / SEG, 0, i / SEG, 1], i * 4); }
-    sg.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
-    const si = []; for (let i = 0; i < SEG; i++) { const a = i * 2; si.push(a, a + 2, a + 1, a + 2, a + 3, a + 1); }
-    sg.setIndex(si);
-    silk = new THREE.Mesh(sg, silkMaterial(o.silkColor || '#cfdcff'));
-    silk.frustumCulled = false;
-    scene.add(silk);
-  }
-  return { ...o, g, mesh, silk };
+  const front = new THREE.Mesh(g, satin(o.face, { side: THREE.FrontSide }));
+  const back = new THREE.Mesh(g, satin(o.back, { side: THREE.BackSide, sheenColor: new THREE.Color('#ffffff') }));
+  front.frustumCulled = back.frustumCulled = false;
+  scene.add(front, back);
+  const curve = new THREE.CatmullRomCurve3(o.pts.map(p => new THREE.Vector3(...p)), false, 'centripetal');
+  curve.arcLengthDivisions = 600;
+  return { ...o, g, front, back, curve };
 }
 
-function silkMaterial(color) {
-  return new THREE.ShaderMaterial({
-    transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, fog: false,
-    uniforms: { uTime: { value: 0 }, uColor: { value: new THREE.Color(color) }, uFrom: { value: 0 }, uTo: { value: 1 }, uAlpha: { value: 1 } },
-    vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
-    fragmentShader: `varying vec2 vUv; uniform float uTime, uFrom, uTo, uAlpha; uniform vec3 uColor;
-      void main(){
-        if (vUv.x < uFrom || vUv.x > uTo) discard;
-        float ph = uTime * 6.2831853 / 10.0;
-        float v = vUv.y + 0.06 * sin(vUv.x * 14.0 + ph * 2.0);
-        float fib = 0.0;
-        fib += pow(0.5 + 0.5 * sin(v * 90.0 + sin(vUv.x * 9.0 + ph) * 4.0), 10.0) * 0.9;
-        fib += pow(0.5 + 0.5 * sin(v * 37.0 - vUv.x * 6.0 + ph * 3.0), 6.0) * 0.5;
-        float edge = smoothstep(0.0, 0.25, vUv.y) * smoothstep(1.0, 0.65, vUv.y);
-        float ends = smoothstep(uFrom, uFrom + 0.12, vUv.x) * smoothstep(uTo, uTo - 0.12, vUv.x);
-        float body = 0.10 + 0.9 * fib;
-        float a = body * edge * ends * 0.36 * uAlpha;
-        gl_FragColor = vec4(uColor * a, a);
-      }`
-  });
-}
-
-const physical = (color, extra = {}) => new THREE.MeshPhysicalMaterial({
-  color, metalness: 0.15, roughness: 0.28, clearcoat: 0.8, clearcoatRoughness: 0.04,
-  sheen: 0.6, sheenColor: new THREE.Color('#6f8cff'), sheenRoughness: 0.4,
-  iridescence: 0.15, iridescenceIOR: 1.4, ...extra
-});
-
-const RING = new THREE.Vector3(2.35, 0.1, 0), RING_R = 1.36;
 const ribbons = [
-  makeRibbon({ pts: [[-7,-4.6,4.4],[-1.6,-2.9,2.7],[1.15,-1.1,1.05],[2.35,0.1,0],[3.55,1.3,-1.05],[5.6,3.1,-2.5],[9.5,5.4,-4.8]], fw: [1,1,.25,0,.25,1,1],
-    width: .33, thick: .04, twist: .75, flutter: .26, seed: .3, silk: true, silkLift: .55, material: physical('#2244e0') }),
+  makeRibbon({ pts: [[-1,-8,-4.5],[1.6,-4.6,-3.8],[3.2,-1.8,-3],[5,.7,-3.2],[6.6,3,-4],[10.5,5,-6]], width: .28, amp: .3, twist: .9, phase: 1.0, seed: 4.1, start: .5, face: '#5f7cf0', back: '#c9d5fa' }),
+  makeRibbon({ pts: [[-8,-5,1.4],[-1,-4.1,1],[2.7,-2.5,1.3],[4.15,-.4,.9],[4.9,1.6,.2],[7,3.1,-1],[11,3.5,-2.2]], width: .3, amp: .3, twist: 1.2, phase: 2.4, seed: 2.2, start: .25, face: '#e9edfb', back: '#8ea6f5' }),
+  makeRibbon({ pts: [[-8,-3.6,3.4],[-2,-3.5,2.2],[1.5,-2.0,.8],[2.95,.15,0],[4.2,2.0,-.6],[6.6,3.5,-1.6],[10.5,4.3,-3]], width: .46, amp: .34, twist: 1.0, phase: -.5, seed: .3, start: 0, face: '#2749ee', back: '#e4e9fa' }),
+  makeRibbon({ pts: [[-6,-5.2,4],[1,-3.8,3.6],[3.9,-2.5,3],[5.5,-1.0,2.2],[8.5,.1,1]], width: .15, amp: .2, twist: 1.5, phase: .8, seed: 5.5, start: .6, face: '#3152ee', back: '#dfe6fb' }),
 ];
-ribbons.forEach(r => {  // доля длины, на которой лента проходит центр кольца
-  const c = new THREE.CatmullRomCurve3(r.pts.map(p => new THREE.Vector3(...p)), false, 'centripetal');
-  let best = 1e9; for (let i = 0; i <= 400; i++) { const d = c.getPointAt(i / 400).distanceTo(RING); if (d < best) { best = d; r.mid = i / 400; } }
-});
-
-// кольцо знака — настоящий тор, лента проходит сквозь него
-const ringMat = new THREE.MeshPhysicalMaterial({ color: '#f4f6fc', metalness: .2, roughness: .25, clearcoat: 1, emissive: new THREE.Color('#8fa6ff'), emissiveIntensity: .55 });
-const ring = new THREE.Mesh(new THREE.BufferGeometry(), ringMat);
-ring.position.copy(RING); ring.rotation.z = Math.PI * .75; ring.frustumCulled = false; scene.add(ring);
-let ringArc = -1;
-function setRing(k) {
-  k = Math.round(k * 200) / 200;
-  if (k === ringArc) return; ringArc = k;
-  ring.geometry.dispose();
-  ring.visible = k > 0.004;
-  if (ring.visible) ring.geometry = new THREE.TorusGeometry(RING_R, .03, 20, Math.max(8, Math.round(220 * k)), TAU * k);
-}
 
 const tmpV = new THREE.Vector3();
+const VIEW = new THREE.Vector3(0, 0, 1);
 function updateRibbon(r, t, from, to) {
-  const ph = t / LOOP * TAU;
-  const pts = r.pts.map((p, i) => { const f = r.flutter * r.fw[i]; return new THREE.Vector3(
-    p[0] + Math.sin(ph + r.seed + i * 1.1) * f * .6,
-    p[1] + Math.cos(ph + r.seed * 1.3 + i * .9) * f,
-    p[2] + Math.sin(ph + r.seed * .7 + i * 1.7) * f * .8); });
-  const curve = new THREE.CatmullRomCurve3(pts, false, 'centripetal');
-  const pos = r.g.attributes.position.array, nor = r.g.attributes.normal.array;
-  const sPos = r.silk ? r.silk.geometry.attributes.position.array : null;
-  const Np = new THREE.Vector3(), Bp = new THREE.Vector3(), P = new THREE.Vector3(), T = new THREE.Vector3(), N0 = new THREE.Vector3(), B0 = new THREE.Vector3();
-  const VIEW = new THREE.Vector3(0, 0, 1);
+  const tl = t / LOOP;                       // все частоты кратны циклу → бесшовный луп
+  const pos = r.g.attributes.position.array;
+  const P = new THREE.Vector3(), T = new THREE.Vector3(), N0 = new THREE.Vector3(), B0 = new THREE.Vector3(), Np = new THREE.Vector3(), Bp = new THREE.Vector3();
   for (let i = 0; i <= SEG; i++) {
-    const s = i / SEG;
-    const sv = clamp(lerp(from, to, s));
-    curve.getPointAt(sv, P); curve.getTangentAt(sv, T);
+    const sv = clamp(lerp(from, to, i / SEG));
+    r.curve.getPointAt(sv, P); r.curve.getTangentAt(sv, T);
     N0.crossVectors(T, VIEW).normalize(); B0.crossVectors(N0, T).normalize();
-    // у кольца лента спокойна и смотрит на зрителя — читается как черта знака
-    const calm = THREE.MathUtils.smoothstep(Math.abs(sv - r.mid), .07, .3);
-    const th = .42 + r.twist * TAU * (sv - r.mid) * calm + Math.sin(ph + sv * 4 + r.seed) * .4 * calm;
+    // медленный перекрут открывает изнанку, сверху — покачивание от ветра
+    const th = r.phase + r.twist * TAU * sv + Math.sin(TAU * (1.3 * sv - tl) + r.seed) * .55;
     const c = Math.cos(th), sn = Math.sin(th);
     Np.copy(N0).multiplyScalar(c).addScaledVector(B0, sn);
     Bp.copy(N0).multiplyScalar(-sn).addScaledVector(B0, c);
-    const wave = Math.sin(TAU * (sv * 2.2 - t / LOOP * 2) + r.seed) * .08 * calm;
-    P.addScaledVector(Bp, wave);
-    const taper = Math.pow(Math.sin(Math.PI * clamp(sv * .97 + .015)), .7);
-    const w = r.width * (.03 + .97 * taper), tk = r.thick * (.2 + .8 * taper);
+    const taper = Math.pow(Math.sin(Math.PI * clamp(sv * .96 + .02)), .55);
+    const q = i / SEG;   // заострённые концы у растущей и уходящей ленты
+    const tip = Math.pow(clamp(to < .999 ? (1 - q) / .07 : 1) * clamp(from > .001 ? q / .07 : 1), .6);
+    const w = r.width * taper * tip * (.82 + .18 * Math.sin(TAU * (2.1 * sv - tl) + r.seed * 3));
+    const A = r.amp * (.3 + .7 * sv);        // к свободному концу полощется сильнее
+    // общий снос осевой линии крупной волной
+    P.addScaledVector(B0, Math.sin(TAU * (1.6 * sv - 2 * tl) + r.seed) * A * .9)
+     .addScaledVector(N0, Math.sin(TAU * (1.1 * sv - tl) + r.seed * 2) * A * .5);
     for (let j = 0; j <= PROF; j++) {
-      const a = j / PROF * TAU, ca = Math.cos(a), sa = Math.sin(a);
+      const u = j / PROF * 2 - 1;
+      const fl = A * ( Math.sin(TAU * (3.2 * sv - 2 * tl) + u * 1.1 + r.seed) * .55
+                     + Math.sin(TAU * (5.6 * sv - 3 * tl) - u * 1.7 + r.seed * 2) * .28
+                     + Math.sin(TAU * (9.5 * sv - 5 * tl) + u * 2.6 + r.seed * 5) * .10 ) * (.5 + .5 * Math.abs(u));
+      const cup = (1 - u * u) * w * .22;
       const k = (i * (PROF + 1) + j) * 3;
-      tmpV.copy(P).addScaledVector(Np, w * ca).addScaledVector(Bp, tk * sa);
+      tmpV.copy(P).addScaledVector(Np, w * u).addScaledVector(Bp, cup + fl);
       pos[k] = tmpV.x; pos[k + 1] = tmpV.y; pos[k + 2] = tmpV.z;
-      tmpV.copy(Np).multiplyScalar(ca / w).addScaledVector(Bp, sa / tk).normalize();
-      nor[k] = tmpV.x; nor[k + 1] = tmpV.y; nor[k + 2] = tmpV.z;
-    }
-    if (sPos) {
-      const lift = r.silkLift * (.25 + .75 * calm) * Math.sin(Math.PI * sv) * (.85 + .15 * Math.sin(ph * 2 + sv * 7));
-      const sw = r.width * (1.5 + 1.1 * calm) * (.1 + .9 * taper);
-      const base = P.clone().addScaledVector(Bp, lift).addScaledVector(Np, Math.sin(ph + sv * 5) * .1);
-      const flow = Math.sin(TAU * (sv * 3 - t / LOOP * 3) + r.seed) * .12;
-      const k = i * 6;
-      tmpV.copy(base).addScaledVector(Np, sw * .5).addScaledVector(Bp, flow);
-      sPos[k] = tmpV.x; sPos[k + 1] = tmpV.y; sPos[k + 2] = tmpV.z;
-      tmpV.copy(base).addScaledVector(Np, -sw * .5).addScaledVector(Bp, -flow);
-      sPos[k + 3] = tmpV.x; sPos[k + 4] = tmpV.y; sPos[k + 5] = tmpV.z;
     }
   }
   r.g.attributes.position.needsUpdate = true;
-  r.g.attributes.normal.needsUpdate = true;
-  r.mesh.visible = to - from > .004;
-  if (r.silk) {
-    r.silk.geometry.attributes.position.needsUpdate = true;
-    r.silk.material.uniforms.uTime.value = t;
-    r.silk.visible = r.mesh.visible;
-  }
+  r.g.computeVertexNormals();
+  r.front.visible = r.back.visible = to - from > .004;
 }
 
 // ---------- пыль и боке в потоке ветра ----------
@@ -424,11 +357,10 @@ window.render = function (t) {
   camera.position.z -= eIn3(out) * .8;
   camera.updateMatrixWorld();
 
-  const r = ribbons[0];
-  const grow = eIO3(prog(t, GUST - .2, 2.7)), tail = eIO3(prog(t, OUT + .5, 2.8));
-  updateRibbon(r, t, Math.min(tail, grow - .001), Math.max(grow, .001));
-  r.silk.material.uniforms.uAlpha.value = clamp((t - GUST) / 2.5) * (1 - out);
-  setRing(eIO3(prog(t, 5.6, 1.5)) * (1 - eIO3(prog(t, OUT + .1, 1.4))));
+  ribbons.forEach(r => {
+    const grow = eIO3(prog(t, GUST - .2 + r.start, 3.0)), tail = eIO3(prog(t, OUT + .3 + r.start * .6, 2.8));
+    updateRibbon(r, t, Math.min(tail, grow - .001), Math.max(grow, .001));
+  });
 
   bgMat.uniforms.uTime.value = t;
   pMat.uniforms.uTime.value = t; pMat.uniforms.uAlpha.value = clamp(t / 1.2) * (1 - out * .7);
