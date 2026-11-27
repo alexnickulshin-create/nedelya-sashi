@@ -64,8 +64,11 @@ const lerp = (a, b, k) => a + (b - a) * k;
 const $ = id => document.getElementById(id);
 
 // Таймлайн: 0–2.2 снегопад · 2.2–6.8 порыв собирает слова · 8–18 удержание (луп) · 18–22 слова срывает ветром
-const FORM = 2.4, FORM_SPAN = 2.0, HOLD = 8, OUT = 18, LEAVE = 18.2, LEAVE_SPAN = 1.4;
-window.DURATION = 22;
+// ?vo=1 — версия под озвучку: слова собираются позже, на фразе «фото- и видеосъёмка запрещена»
+const VO = new URLSearchParams(location.search).has('vo');
+const S = VO ? 6.6 : 0;
+const FORM = 2.4 + S, FORM_SPAN = 2.0, HOLD = 8 + S, OUT = VO ? 19.5 : 18, LEAVE = OUT + .2, LEAVE_SPAN = 1.4;
+window.DURATION = OUT + 4;
 window.LOOP_RANGE = [HOLD, OUT];
 
 await document.fonts.load('700 170px Brand', 'Съёмказпрещн');
@@ -163,7 +166,7 @@ const pMat = new THREE.ShaderMaterial({
         a = smoothstep(0.0, 0.12, fk) * mix(0.30, 0.50, e) * (0.65 + 0.35 * sin(ph * (2.0 + floor(seed.x * 4.0)) + seed.y * 60.0));
         // позёмка с кромок букв (цикл 5 с → луп бесшовный)
         if (seed.w > 0.66) {
-          float gate = smoothstep(6.8, 8.0, uTime);
+          float gate = smoothstep(${(6.8 + S).toFixed(2)}, ${(8 + S).toFixed(2)}, uTime);
           float c = fract(uTime / 5.0 + seed.x);
           float s = max(0.0, (c - 0.45) / 0.55) * gate;
           p += vec2(pow(s, 1.5) * 520.0 * (0.5 + seed.y), -sin(s * PI) * 46.0 * (seed.z - 0.2) + s * s * 90.0 * (seed.z - 0.5));
@@ -248,10 +251,10 @@ const ht = $('htext');
 window.render = function (t) {
   bgMat.uniforms.uTime.value = t;
   pMat.uniforms.uTime.value = t;
-  pMat.uniforms.uGust.value = eIO3(prog(t, 1.9, 3.0)) + eIO3(prog(t, OUT, 3.2));   // целое число кругов → удержание не сбивается
+  pMat.uniforms.uGust.value = eIO3(prog(t, 1.9 + S, 3.0)) + eIO3(prog(t, OUT, 3.2));   // целое число кругов → удержание не сбивается
   pMat.uniforms.uAmb.value = clamp(t / 1.0);
   finish.uniforms.uTime.value = t;
-  finish.uniforms.uFade.value = 1 - eIn3(prog(t, 20.9, 1.1));
+  finish.uniforms.uFade.value = 1 - eIn3(prog(t, OUT + 2.9, 1.1));
   composer.render();
 
   $('veil').style.opacity = 1 - clamp(t / 0.8);
@@ -265,7 +268,7 @@ window.render = function (t) {
   ht.style.webkitMaskImage = m; ht.style.maskImage = m;
   ht.style.opacity = .78;
 
-  const items = [['kicker', 1.0], ['rule', 6.3], ['body', 6.5], ['en', 6.7], ['sign', 6.9]];
+  const items = [['kicker', 1.0], ['rule', 6.3 + S], ['body', 6.5 + S], ['en', 6.7 + S], ['sign', 6.9 + S]];
   items.forEach(([id, st], n) => {
     const el = $(id);
     windIn(el, prog(t, st, 1.1));
