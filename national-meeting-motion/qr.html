@@ -66,7 +66,7 @@ const $ = id => document.getElementById(id);
 const S = 0;
 // ?vo — версия под озвучку: строки появляются на своих фразах диктора
 const VO = new URLSearchParams(location.search).has('vo');
-const FORM = 1.6, FORM_SPAN = 2.8, HOLD = VO ? 18.5 : 8.5, OUT = VO ? 22.5 : 18.5, LEAVE = OUT + .2, LEAVE_SPAN = 1.6;
+const FORM = 1.6, FORM_SPAN = 2.8, HOLD = VO ? 22 : 8.5, OUT = VO ? 26 : 18.5, LEAVE = OUT + .2, LEAVE_SPAN = 1.6;
 window.DURATION = OUT + 4;
 window.LOOP_RANGE = [HOLD, OUT];
 
@@ -264,7 +264,7 @@ window.render = function (t) {
   const cd = $('card'); cd.style.webkitMaskImage = m; cd.style.maskImage = m;
   pMat.uniforms.uCard.value = 1 - eIO3(prog(t, FORM + 3.4, 1.2)) + eIO3(prog(t, OUT, .4));
 
-  const items = VO ? [['kicker', 1.0], ['sub', 6.9], ['cta', 10.5], ['rule', 12.7], ['manual', 13.0], ['url', 13.4], ['pwl', 16.6], ['pw', 16.9]]
+  const items = VO ? [['kicker', 1.0], ['sub', 7.1], ['cta', 11.9], ['rule', 14.2], ['manual', 14.4], ['url', 15.9], ['pwl', 20.2], ['pw', 20.6]]
                    : [['kicker', 1.0], ['cta', 5.6], ['sub', 5.85], ['rule', 6.2], ['manual', 6.4], ['url', 6.6], ['pwl', 6.9], ['pw', 7.1]];
   items.forEach(([id, st], n) => {
     const el = $(id);
